@@ -1,4 +1,4 @@
-package me.daltonbsf.unirun.ui
+package me.daltonbsf.unirun.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessHigh

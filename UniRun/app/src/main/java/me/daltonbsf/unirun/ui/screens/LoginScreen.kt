@@ -1,4 +1,4 @@
-package me.daltonbsf.unirun.ui
+package me.daltonbsf.unirun.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
