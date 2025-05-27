@@ -25,7 +25,7 @@ fun CaronaScreen(navController: NavController) {
             color = MaterialTheme.colorScheme.primary,
         )
         Button(
-            onClick = {},
+            onClick = { navController.navigate("offerCarona") },
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
@@ -42,7 +42,7 @@ fun CaronaScreen(navController: NavController) {
             modifier = Modifier
                 .padding(vertical = 4.dp, horizontal = 16.dp)
                 .clickable {
-//                    navController.navigate("peopleChat/${chat.getName()}")
+                    navController.navigate("caronaDetails/1")
                 }
         ) {
             CaronaCard(
@@ -55,7 +55,27 @@ fun CaronaScreen(navController: NavController) {
                     origin = "Campus A",
                     destiny = "Campus B",
                     seatsAvailable = 3
-                )
+                ), false
+            )
+        }
+        Card(
+            modifier = Modifier
+                .padding(vertical = 4.dp, horizontal = 16.dp)
+                .clickable {
+                    navController.navigate("caronaDetails/2")
+                }
+        ) {
+            CaronaCard(
+                Carona(
+                    id = "2",
+                    creator = "Bob",
+                    description = "Carona para o shopping",
+                    creationDate = java.time.LocalDateTime.now(),
+                    departureDate = java.time.LocalDateTime.now().plusHours(2),
+                    origin = "Campus B",
+                    destiny = "Shopping Center",
+                    seatsAvailable = 2
+                ), true
             )
         }
     }

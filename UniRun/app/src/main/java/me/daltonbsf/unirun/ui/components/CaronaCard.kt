@@ -1,6 +1,7 @@
 package me.daltonbsf.unirun.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,9 +24,16 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun CaronaCard(carona: Carona) {
+fun CaronaCard(carona: Carona, isUserInCarona: Boolean) {
+    val backgroundColor = if (isUserInCarona) {
+        MaterialTheme.colorScheme.primaryContainer // Cor quando o usuário está na carona
+    } else {
+        Color.Transparent // Cor padrão ou outra cor desejada
+    }
+
     Row(
         modifier = Modifier
+            .background(backgroundColor) // Define o background aqui
             .padding(8.dp)
             .fillMaxWidth()
     ) {

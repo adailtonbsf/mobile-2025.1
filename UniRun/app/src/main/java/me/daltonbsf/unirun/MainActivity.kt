@@ -23,7 +23,9 @@ import androidx.compose.runtime.getValue
 import me.daltonbsf.unirun.model.caronaChatList
 import me.daltonbsf.unirun.model.peopleChatList
 import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
+import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
 import me.daltonbsf.unirun.ui.screens.CaronaScreen
+import me.daltonbsf.unirun.ui.screens.OfferCaronaScreen
 
 class MainActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
@@ -41,7 +43,9 @@ class MainActivity : ComponentActivity() {
                 } else {
                     val withoutTopBottomBar = listOf(
                         "peopleChat/{chatName}",
-                        "caronaChat/{chatName}"
+                        "caronaChat/{chatName}",
+                        "offerCarona",
+                        "caronaDetails/{caronaId}"
                     )
                     Scaffold(
                         topBar = {
@@ -77,6 +81,13 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             composable("carona") { CaronaScreen(navController) }
+                            composable("offerCarona") { OfferCaronaScreen(navController) }
+                            composable("caronaDetails/{caronaId}") { navBackStackEntry ->
+                                val caronaId = navBackStackEntry.arguments?.getString("caronaId")
+                                if (caronaId != null) {
+                                    CaronaDetailsScreen(caronaId, navController)
+                                }
+                            }
                         }
                     }
                 }
