@@ -23,28 +23,31 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @Composable
-fun CaronasPessoasSwitch(navController: NavController, isPeopleSelected: Boolean = true) {
+fun ChatSwitchButton(navController: NavController, isPeopleSelected: Boolean = true) {
+    val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+
     Row(
         modifier = Modifier
             .height(50.dp)
             .clip(RoundedCornerShape(50.dp))
-            .background(Color(0xFFEFEFEF))
+            .background(surfaceColor)
     ) {
-        var isPeopleSelected by remember { mutableStateOf(isPeopleSelected) }
+        var currentIsPeopleSelected by remember { mutableStateOf(isPeopleSelected) }
         listOf("Caronas", "Pessoas").forEach { option ->
-            val isSelected = (option == if (isPeopleSelected) "Pessoas" else "Caronas")
+            val isSelected = (option == if (currentIsPeopleSelected) "Pessoas" else "Caronas")
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(50.dp))
-                    .background(if (isSelected) Color.White else Color.Transparent)
+                    .background(if (isSelected) primaryColor else Color.Transparent)
                     .clickable {
-                        // isSelected é true se a 'option' atual do loop já é a aba selecionada
-                        // Se !isSelected, significa que o usuário clicou em uma aba diferente
                         if (!isSelected) {
-                            isPeopleSelected = option == "Pessoas" // Atualiza o estado para a nova seleção
-                            if (isPeopleSelected) { // Navega com base no estado atualizado
+                            currentIsPeopleSelected = option == "Pessoas"
+                            if (currentIsPeopleSelected) {
                                 navController.navigate("chats/people")
                             } else {
                                 navController.navigate("chats/carona")
@@ -55,7 +58,7 @@ fun CaronasPessoasSwitch(navController: NavController, isPeopleSelected: Boolean
             ) {
                 Text(
                     text = option,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
+                    color = if (isSelected) onPrimaryColor else onSurfaceColor,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                 )
             }

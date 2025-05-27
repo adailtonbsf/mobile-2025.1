@@ -57,9 +57,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation (libs.androidx.runtime.livedata)
-    implementation (libs.androidx.core.splashscreen)
-    implementation (libs.androidx.material.icons.extended)
-    implementation (libs.androidx.material.icons.core)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.material.icons.core)
     implementation(libs.coil.compose)
+    implementation(libs.maps.compose)
+    implementation(libs.play.services.maps)
 }

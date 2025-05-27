@@ -11,13 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import me.daltonbsf.unirun.model.caronaChatList
-import me.daltonbsf.unirun.ui.components.CaronasPessoasSwitch
+import me.daltonbsf.unirun.ui.components.ChatSwitchButton
 import me.daltonbsf.unirun.ui.components.ChatCard
 
 @Composable
 fun CaronaChatScreen(navController: NavController) {
     Column(modifier = Modifier.padding(16.dp)) {
-        CaronasPessoasSwitch(navController, false)
+        ChatSwitchButton(navController, false)
         LazyColumn {
             items(caronaChatList.size) { index ->
                 val chat = caronaChatList[index]

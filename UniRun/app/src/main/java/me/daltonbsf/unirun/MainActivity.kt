@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import me.daltonbsf.unirun.model.caronaChatList
 import me.daltonbsf.unirun.model.peopleChatList
 import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
+import me.daltonbsf.unirun.ui.screens.CaronaScreen
 
 class MainActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
@@ -38,10 +39,13 @@ class MainActivity : ComponentActivity() {
                 if (!isLoggedIn.value) {
                     LoginScreen(onLoginSuccess = { isLoggedIn.value = true },  onSignUpClick = { navController.navigate("signup")} )
                 } else {
+                    val withoutTopBottomBar = listOf(
+                        "peopleChat/{chatName}",
+                        "caronaChat/{chatName}"
+                    )
                     Scaffold(
                         topBar = {
-                            // Mostrar TopBar principal apenas se não estiver na rota do chat individual
-                            if (currentRoute?.startsWith("peopleChat/{chatName}") == false && currentRoute.startsWith("caronaChat/{chatName}") == false) {
+                            if (!withoutTopBottomBar.contains(currentRoute)) {
                                 TopBar(
                                     onThemeToggle = { isDarkTheme.value = !isDarkTheme.value },
                                     onOpenDrawer = { /* TODO: Open drawer */ }
@@ -49,8 +53,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         bottomBar = {
-                            // Mostrar BottomNavigationBar principal apenas se não estiver na rota do chat individual
-                            if (currentRoute?.startsWith("peopleChat/{chatName}") == false && currentRoute.startsWith("caronaChat/{chatName}") == false) {
+                            if (!withoutTopBottomBar.contains(currentRoute)) {
                                 BottomNavigationBar(navController) }
                         }
                     ) { innerPadding ->
@@ -73,6 +76,7 @@ class MainActivity : ComponentActivity() {
                                     ChatScreen(caronaChatList.first(), navController)
                                 }
                             }
+                            composable("carona") { CaronaScreen(navController) }
                         }
                     }
                 }
