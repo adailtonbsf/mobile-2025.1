@@ -74,7 +74,7 @@ fun CaronaDetailsScreen(
         },
         bottomBar = {
             Button(
-                onClick = { /* TODO: Implement join carona logic */ },
+                onClick = { navController.navigate("caronaChat/${carona.caronaChat.getName()}") },
                 modifier = Modifier
                     .padding(16.dp)
                     .fillMaxWidth(),

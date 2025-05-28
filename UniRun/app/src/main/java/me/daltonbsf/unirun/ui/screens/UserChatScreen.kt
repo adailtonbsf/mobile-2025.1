@@ -14,10 +14,10 @@ import me.daltonbsf.unirun.ui.components.ChatSwitchButton
 import me.daltonbsf.unirun.ui.components.ChatCard
 
 @Composable
-fun PeopleChatScreen(navController: NavController) {
-    Column(modifier = Modifier.padding(16.dp)) {
+fun UserChatScreen(navController: NavController) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         ChatSwitchButton(navController)
-        LazyColumn {
+        LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
             items(peopleChatList.size) { index ->
                 val chat = peopleChatList[index]
                 Card(

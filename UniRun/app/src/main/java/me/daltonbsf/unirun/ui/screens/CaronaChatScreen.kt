@@ -16,9 +16,9 @@ import me.daltonbsf.unirun.ui.components.ChatCard
 
 @Composable
 fun CaronaChatScreen(navController: NavController) {
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         ChatSwitchButton(navController, false)
-        LazyColumn {
+        LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
             items(caronaChatList.size) { index ->
                 val chat = caronaChatList[index]
                 Card(

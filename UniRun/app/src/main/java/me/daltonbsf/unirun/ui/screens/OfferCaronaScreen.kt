@@ -131,12 +131,12 @@ fun DateTimePicker() {
     val isDarkTheme = isSystemInDarkTheme()
     val textFieldColors = if (isDarkTheme) {
         OutlinedTextFieldDefaults.colors(
-            disabledTextColor = Color.White, // Cor do texto desabilitado para tema escuro
-            disabledBorderColor = Color.Gray, // Cor da borda desabilitada para tema escuro
-            disabledLeadingIconColor = Color.LightGray, // Cor do ícone inicial desabilitado para tema escuro
-            disabledTrailingIconColor = Color.LightGray, // Cor do ícone final desabilitado para tema escuro
-            disabledLabelColor = Color.LightGray, // Cor do rótulo desabilitado para tema escuro
-            disabledPlaceholderColor = Color.DarkGray, // Cor do placeholder desabilitado para tema escuro
+            disabledTextColor = Color.White,
+            disabledBorderColor = Color.Gray,
+            disabledLeadingIconColor = Color.LightGray,
+            disabledTrailingIconColor = Color.LightGray,
+            disabledLabelColor = Color.LightGray,
+            disabledPlaceholderColor = Color.DarkGray,
         )
     } else {
         OutlinedTextFieldDefaults.colors(
@@ -166,6 +166,6 @@ fun DateTimePicker() {
         },
         readOnly = true,
         enabled = false,
-        colors = textFieldColors // Aplicar as cores aqui
+        colors = textFieldColors
     )
 }

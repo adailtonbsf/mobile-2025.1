@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import me.daltonbsf.unirun.model.Carona
+import me.daltonbsf.unirun.model.caronaList
 import me.daltonbsf.unirun.ui.components.CaronaCard
 
 @Composable
@@ -20,7 +20,7 @@ fun CaronaScreen(navController: NavController) {
     Column {
         Text(
             "Caronas",
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp),
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -46,16 +46,7 @@ fun CaronaScreen(navController: NavController) {
                 }
         ) {
             CaronaCard(
-                Carona(
-                    id = "1",
-                    creator = "Alice",
-                    description = "Carona para a aula de Algoritmos",
-                    creationDate = java.time.LocalDateTime.now(),
-                    departureDate = java.time.LocalDateTime.now().plusHours(1),
-                    origin = "Campus A",
-                    destiny = "Campus B",
-                    seatsAvailable = 3
-                ), false
+                caronaList[0], false
             )
         }
         Card(
@@ -66,16 +57,7 @@ fun CaronaScreen(navController: NavController) {
                 }
         ) {
             CaronaCard(
-                Carona(
-                    id = "2",
-                    creator = "Bob",
-                    description = "Carona para o shopping",
-                    creationDate = java.time.LocalDateTime.now(),
-                    departureDate = java.time.LocalDateTime.now().plusHours(2),
-                    origin = "Campus B",
-                    destiny = "Shopping Center",
-                    seatsAvailable = 2
-                ), true
+                caronaList[1], true
             )
         }
     }

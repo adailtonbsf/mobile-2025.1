@@ -15,7 +15,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import me.daltonbsf.unirun.ui.components.BottomNavigationBar
 import me.daltonbsf.unirun.ui.screens.LoginScreen
-import me.daltonbsf.unirun.ui.screens.PeopleChatScreen
 import me.daltonbsf.unirun.ui.components.TopBar
 import me.daltonbsf.unirun.ui.screens.ChatScreen
 import me.daltonbsf.unirun.ui.theme.UniRunTheme
@@ -25,16 +24,18 @@ import me.daltonbsf.unirun.model.peopleChatList
 import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
 import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
 import me.daltonbsf.unirun.ui.screens.CaronaScreen
+import me.daltonbsf.unirun.ui.screens.ConfigScreen
 import me.daltonbsf.unirun.ui.screens.OfferCaronaScreen
+import me.daltonbsf.unirun.ui.screens.UserChatScreen
 
 class MainActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            var isLoggedIn = remember { mutableStateOf(true) }
+            var isLoggedIn = remember { mutableStateOf(true) } // PULAR LOGIN
             val navController = rememberNavController()
-            val isDarkTheme = remember { mutableStateOf(false) }
+            val isDarkTheme = remember { mutableStateOf(true) }
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
             UniRunTheme (darkTheme = isDarkTheme.value) {
@@ -66,8 +67,11 @@ class MainActivity : ComponentActivity() {
                             startDestination = "chats/people",
                             Modifier.padding(innerPadding)
                         ) {
-                            composable("chats/people") { PeopleChatScreen(navController) }
+                            composable("chats/people") { UserChatScreen(navController) }
                             composable("chats/carona") { CaronaChatScreen(navController) }
+                            composable("carona") { CaronaScreen(navController) }
+                            composable("offerCarona") { OfferCaronaScreen(navController) }
+                            composable("config") { ConfigScreen(navController) }
                             composable("peopleChat/{chatName}") { navBackStackEntry ->
                                 val chatName = navBackStackEntry.arguments?.getString("chatName")
                                 if (chatName != null) {
@@ -80,8 +84,6 @@ class MainActivity : ComponentActivity() {
                                     ChatScreen(caronaChatList.first(), navController)
                                 }
                             }
-                            composable("carona") { CaronaScreen(navController) }
-                            composable("offerCarona") { OfferCaronaScreen(navController) }
                             composable("caronaDetails/{caronaId}") { navBackStackEntry ->
                                 val caronaId = navBackStackEntry.arguments?.getString("caronaId")
                                 if (caronaId != null) {
