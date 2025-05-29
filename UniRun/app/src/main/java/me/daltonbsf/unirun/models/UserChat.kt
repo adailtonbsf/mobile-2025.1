@@ -1,18 +1,19 @@
-package me.daltonbsf.unirun.model
+package me.daltonbsf.unirun.models
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import java.time.LocalDateTime
 
-data class PeopleChat(
-    val peopleName: String,
+data class UserChat(
+    val userName: String,
     override val messages: MutableList<Message> = mutableStateListOf<Message>(),
     override var profileImageURL: String = "",
-    override var unread: MutableState<Boolean> = mutableStateOf(true)
+    override var unread: MutableState<Boolean> = mutableStateOf(true),
+    var isPinned: MutableState<Boolean> = mutableStateOf(false)
 ): ChatInterface {
     override fun getName(): String {
-        return peopleName
+        return userName
     }
 }
 
@@ -34,18 +35,18 @@ val charlieMessages = mutableStateListOf(
     Message(9, "Charlie", "Bob", LocalDateTime.now().minusHours(19), "Recebi, obrigado!")
 )
 
-val peopleChatList = listOf(
-    PeopleChat(
+var userChatList = mutableStateListOf(
+    UserChat(
         "Alice",
         messages = aliceMessages,
         profileImageURL = "https://i.pinimg.com/736x/19/99/5e/19995e098e2f6f5e029f2c9a79fb62ab.jpg"
     ),
-    PeopleChat(
+    UserChat(
         "Bob",
         messages = bobMessages,
         profileImageURL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxEy9UzgJT8kDAPkT0bz8-MxQWKHz1KNRlkQ&s"
     ),
-    PeopleChat(
+    UserChat(
         "Charlie",
         messages = charlieMessages,
         profileImageURL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAuUNMtLhNHgbw51Dtfckd_JvggnZkC0fSXg&s"

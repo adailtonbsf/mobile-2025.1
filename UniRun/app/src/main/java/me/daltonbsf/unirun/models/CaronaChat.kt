@@ -1,4 +1,4 @@
-package me.daltonbsf.unirun.model
+package me.daltonbsf.unirun.models
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf

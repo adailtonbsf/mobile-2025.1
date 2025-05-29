@@ -33,8 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.model.caronaList
-import me.daltonbsf.unirun.model.userList
+import me.daltonbsf.unirun.models.caronaList
+import me.daltonbsf.unirun.models.userList
 import me.daltonbsf.unirun.ui.components.UserCard
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -130,7 +130,7 @@ fun CaronaDetailsScreen(
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge
             )
-            UserCard(userList[0])
+            UserCard(userList[0], navController)
         }
     }
 }

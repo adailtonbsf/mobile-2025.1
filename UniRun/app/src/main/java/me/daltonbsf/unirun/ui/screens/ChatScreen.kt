@@ -1,5 +1,6 @@
 package me.daltonbsf.unirun.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,11 +45,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.model.CaronaChat
-import me.daltonbsf.unirun.model.ChatInterface
-import me.daltonbsf.unirun.model.Message
-import me.daltonbsf.unirun.model.PeopleChat
-import me.daltonbsf.unirun.model.peopleChatList
+import me.daltonbsf.unirun.models.CaronaChat
+import me.daltonbsf.unirun.models.ChatInterface
+import me.daltonbsf.unirun.models.Message
+import me.daltonbsf.unirun.models.UserChat
+import me.daltonbsf.unirun.models.userChatList
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -61,7 +62,15 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            if (chat is CaronaChat) {
+                                Modifier.clickable { navController.navigate("caronaProfile/${chat.getName()}") }
+                            } else {
+                                Modifier
+                            }
+                    ) {
                         AsyncImage(
                             model = chat.profileImageURL,
                             contentDescription = "Profile Image",
@@ -109,7 +118,7 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
                 reverseLayout = true
             ) {
                 items(chat.messages.toList().reversed()) { message ->
-                    if (chat is PeopleChat) {
+                    if (chat is UserChat) {
                         MessageBubble(message)
                     } else if (chat is CaronaChat) {
                         GroupMessageBubble(message, chat.profileImageURL)
@@ -196,9 +205,9 @@ fun GroupMessageBubble(message: Message, model: String) {
         if (message.sender != "me") {
             AsyncImage(
                 model = when (message.sender) {
-                    "Alice" -> peopleChatList[0].profileImageURL
-                    "Bob" -> peopleChatList[1].profileImageURL
-                    "Charlie" -> peopleChatList[2].profileImageURL
+                    "Alice" -> userChatList[0].profileImageURL
+                    "Bob" -> userChatList[1].profileImageURL
+                    "Charlie" -> userChatList[2].profileImageURL
                     else -> ""
                 },
                 contentDescription = "Sender Image",

@@ -18,17 +18,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import me.daltonbsf.unirun.model.User
+import me.daltonbsf.unirun.models.User
 import me.daltonbsf.unirun.R
 
 @Composable
-fun UserCard(user: User) {
-    Card {
+fun UserCard(user: User, navController: NavController) {
+    Card(
+        onClick = { navController.navigate("peopleChat/${user.name}") }
+    ){
         Column(
             modifier = Modifier
                 .padding(8.dp)
-                .fillMaxWidth(0.9f) // Adjust width as needed
+                .fillMaxWidth(0.9f)
                 .padding(vertical = 4.dp, horizontal = 8.dp)
         ) {
             Row(
@@ -38,8 +41,8 @@ fun UserCard(user: User) {
                 AsyncImage(
                     model = user.profileImageURL,
                     contentDescription = "Profile Image",
-                    placeholder = painterResource(R.drawable.placeholder), // Replace with your placeholder image
-                    error = painterResource(R.drawable.error), // Replace with your error image
+                    placeholder = painterResource(R.drawable.placeholder),
+                    error = painterResource(R.drawable.error),
                     modifier = Modifier.size(64.dp).clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
