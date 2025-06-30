@@ -1,5 +1,3 @@
-// app/src/main/java/me/daltonbsf/unirun/MainActivity.kt
-
 package me.daltonbsf.unirun
 
 import android.Manifest.permission.POST_NOTIFICATIONS
@@ -9,7 +7,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresPermission
-import androidx.annotation.RequiresPermission
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -52,8 +55,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -85,7 +87,8 @@ import me.daltonbsf.unirun.ui.theme.UniRunTheme
 class MainActivity : ComponentActivity() {
     private lateinit var userPreferences: UserPreferences
 
-    @SuppressLint("ObsoleteSdkInt")
+    @ExperimentalAnimationApi
+    @SuppressLint("ObsoleteSdkInt", "ScheduleExactAlarm")
     @RequiresPermission(POST_NOTIFICATIONS)
     @ExperimentalFoundationApi
     @ExperimentalMaterial3Api
@@ -230,7 +233,35 @@ class MainActivity : ComponentActivity() {
                             NavHost(
                                 navController = navController,
                                 startDestination = if (isLoggedIn.value) "chats/people" else "login",
-                                Modifier.padding(innerPadding)
+                                enterTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeIn(animationSpec = tween(0))
+                                    } else {
+                                        slideInHorizontally(initialOffsetX = { it })
+                                    }
+                                },
+                                exitTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeOut(animationSpec = tween(0))
+                                    } else {
+                                        slideOutHorizontally(targetOffsetX = { -it })
+                                    }
+                                },
+                                popEnterTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeIn(animationSpec = tween(0))
+                                    } else {
+                                        slideInHorizontally(initialOffsetX = { -it })
+                                    }
+                                },
+                                popExitTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeOut(animationSpec = tween(0))
+                                    } else {
+                                        slideOutHorizontally(targetOffsetX = { it })
+                                    }
+                                },
+                                modifier = Modifier.padding(innerPadding)
                             ) {
                                 composable("login") {
                                     LoginScreen(
@@ -312,38 +343,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 
-    @RequiresPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-    fun showNotification(context: Context) {
-        val channelId = "example_channel"
-        val notificationId = 1
-        // Criar o canal (necessário para Android 8+)
-        val name = "Canal de Exemplo"
-        val descriptionText = "Descrição do canal"
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(channelId, name, importance).apply {
-            description = descriptionText
-        }
-        val notificationManager: NotificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as
-                    NotificationManager
-        notificationManager.createNotificationChannel(channel)
-        // Criar a notificação
-        val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.notification_icon)
-            .setContentTitle("Título da Notificação")
-            .setContentText("Descrição da notificação.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        // Exibir a notificação
-        with(NotificationManagerCompat.from(context)) {
-            notify(notificationId, builder.build())
-        }
-    }
-
-//    @Composable
-//    fun NotificationExample(context: Context) {
-//        Button(onClick = { showNotification(context) }) {
-//            Text("Exibir Notificação")
-//        }
-//    }
+fun isChatSwitch(from: NavBackStackEntry, to: NavBackStackEntry): Boolean {
+    val fromRoute = from.destination.route
+    val toRoute = to.destination.route
+    return (fromRoute == "chats/people" && toRoute == "chats/carona") ||
+            (fromRoute == "chats/carona" && toRoute == "chats/people")
 }
