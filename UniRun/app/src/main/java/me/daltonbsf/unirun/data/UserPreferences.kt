@@ -1,5 +1,3 @@
-// app/src/main/java/me/daltonbsf/unirun/data/UserPreferences.kt
-
 package me.daltonbsf.unirun.data
 
 import android.annotation.SuppressLint
