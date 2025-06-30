@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.models.User
+import me.daltonbsf.unirun.model.User
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 

@@ -1,8 +1,14 @@
+// app/src/main/java/me/daltonbsf/unirun/MainActivity.kt
+
 package me.daltonbsf.unirun
 
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,9 +57,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
-import me.daltonbsf.unirun.models.caronaChatList
-import me.daltonbsf.unirun.models.userChatList
-import me.daltonbsf.unirun.models.userList
+import me.daltonbsf.unirun.data.UserPreferences
+import me.daltonbsf.unirun.model.caronaChatList
+import me.daltonbsf.unirun.model.userChatList
+import me.daltonbsf.unirun.model.userList
 import me.daltonbsf.unirun.ui.components.BottomNavigationBar
 import me.daltonbsf.unirun.ui.components.TopBar
 import me.daltonbsf.unirun.ui.screens.AboutScreen
@@ -72,19 +80,29 @@ import me.daltonbsf.unirun.ui.screens.UserChatScreen
 import me.daltonbsf.unirun.ui.theme.UniRunTheme
 
 class MainActivity : ComponentActivity() {
+    private lateinit var userPreferences: UserPreferences
+
+    @SuppressLint("ObsoleteSdkInt")
+    @RequiresPermission(POST_NOTIFICATIONS)
     @ExperimentalFoundationApi
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        userPreferences = UserPreferences.getInstance(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(POST_NOTIFICATIONS), 1001)
+        }
         setContent {
+            val isDarkTheme by userPreferences.getPreference(UserPreferences.THEME_KEY, "true")
+                .collectAsState(initial = "true")
+
             var isLoggedIn = remember { mutableStateOf(false) } // PULAR LOGIN
             val navController = rememberNavController()
-            val isDarkTheme = remember { mutableStateOf(true) }
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
-            UniRunTheme (darkTheme = isDarkTheme.value) {
+            UniRunTheme(darkTheme = isDarkTheme.toBoolean()) {
                 val withoutTopBottomBar = listOf(
                     "peopleChat/{chatName}",
                     "caronaChat/{chatName}",
@@ -107,7 +125,9 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(vertical = 24.dp).fillMaxWidth()
+                                modifier = Modifier
+                                    .padding(vertical = 24.dp)
+                                    .fillMaxWidth()
                             ) {
                                 AsyncImage(
                                     model = userList[0].profileImageURL,
@@ -126,7 +146,7 @@ class MainActivity : ComponentActivity() {
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    userList[0].bio.toString(),
+                                    userList[0].bio,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
@@ -187,15 +207,21 @@ class MainActivity : ComponentActivity() {
                             topBar = {
                                 if (!withoutTopBottomBar.contains(currentRoute)) {
                                     TopBar(
-                                        onThemeToggle = { isDarkTheme.value = !isDarkTheme.value },
+                                        onThemeToggle = {
+                                            scope.launch {
+                                                val newThemeValue = (!isDarkTheme.toBoolean()).toString()
+                                                userPreferences.savePreference(UserPreferences.THEME_KEY, newThemeValue)
+                                            }
+                                        },
                                         onOpenDrawer = { scope.launch { drawerState.open() } },
-                                        isDarkTheme.value
+                                        isDarkTheme.toBoolean()
                                     )
                                 }
                             },
                             bottomBar = {
                                 if (!withoutTopBottomBar.contains(currentRoute)) {
-                                    BottomNavigationBar(navController) }
+                                    BottomNavigationBar(navController)
+                                }
                             }
                         ) { innerPadding ->
                             NavHost(
@@ -206,8 +232,14 @@ class MainActivity : ComponentActivity() {
                                 composable("login") {
                                     LoginScreen(
                                         navController,
-                                        { isDarkTheme.value = !isDarkTheme.value },
-                                        isDarkTheme.value )
+                                        {
+                                            scope.launch {
+                                                val newThemeValue = (!isDarkTheme.toBoolean()).toString()
+                                                userPreferences.savePreference(UserPreferences.THEME_KEY, newThemeValue)
+                                            }
+                                        },
+                                        isDarkTheme.toBoolean()
+                                    )
                                 }
                                 composable("registration") {
                                     RegistrationScreen {

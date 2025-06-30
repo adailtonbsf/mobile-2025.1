@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import me.daltonbsf.unirun.models.User
+import me.daltonbsf.unirun.model.User
 import me.daltonbsf.unirun.R
 
 @Composable

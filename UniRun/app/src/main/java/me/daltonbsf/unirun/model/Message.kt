@@ -1,4 +1,4 @@
-package me.daltonbsf.unirun.models
+package me.daltonbsf.unirun.model
 
 import java.time.LocalDateTime
 

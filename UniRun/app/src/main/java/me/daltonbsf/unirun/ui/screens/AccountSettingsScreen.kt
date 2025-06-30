@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import me.daltonbsf.unirun.models.User
+import me.daltonbsf.unirun.model.User
 
 @Composable
 fun AccountSettingsScreen(currentUser: User, navController: NavController) {

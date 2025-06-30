@@ -19,7 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.models.Carona
+import me.daltonbsf.unirun.model.Carona
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 

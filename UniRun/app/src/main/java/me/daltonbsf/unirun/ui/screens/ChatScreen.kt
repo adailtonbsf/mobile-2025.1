@@ -1,5 +1,8 @@
 package me.daltonbsf.unirun.ui.screens
 
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.annotation.SuppressLint
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,14 +48,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.models.CaronaChat
-import me.daltonbsf.unirun.models.ChatInterface
-import me.daltonbsf.unirun.models.Message
-import me.daltonbsf.unirun.models.UserChat
-import me.daltonbsf.unirun.models.userChatList
+import me.daltonbsf.unirun.model.CaronaChat
+import me.daltonbsf.unirun.model.ChatInterface
+import me.daltonbsf.unirun.model.Message
+import me.daltonbsf.unirun.model.UserChat
+import me.daltonbsf.unirun.model.userChatList
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+@RequiresPermission(POST_NOTIFICATIONS)
 @ExperimentalMaterial3Api
 @Composable
 fun ChatScreen(chat: ChatInterface, navController: NavController) {
@@ -150,6 +154,7 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
                         )
                         chat.messages.add(newMessage)
                         messageText = ""
+                        // NotificationUtils.showNotification(context, "Nova mensagem", newMessage.content) // Exibe a notificação
                     }
                 }) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar mensagem")
@@ -159,6 +164,7 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun MessageBubble(message: Message) {
     val configuration = LocalConfiguration.current
@@ -190,6 +196,7 @@ fun MessageBubble(message: Message) {
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun GroupMessageBubble(message: Message, model: String) {
     val configuration = LocalConfiguration.current
@@ -232,7 +239,9 @@ fun GroupMessageBubble(message: Message, model: String) {
                 if (message.sender != "me") {
                     Text(
                         text = message.sender,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.7f)),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp, color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.7f)
+                        ),
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                 }
