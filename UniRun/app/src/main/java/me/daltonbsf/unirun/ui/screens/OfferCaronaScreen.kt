@@ -1,7 +1,13 @@
 package me.daltonbsf.unirun.ui.screens
 
+import android.Manifest
+import android.app.AlarmManager
 import android.app.DatePickerDialog
+import android.app.PendingIntent
 import android.app.TimePickerDialog
+import android.content.Context
+import android.content.Intent
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -24,7 +30,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,13 +43,24 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import me.daltonbsf.unirun.R
+import me.daltonbsf.unirun.util.CaronaAlarmReceiver
+import me.daltonbsf.unirun.util.NotificationUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
 @ExperimentalMaterial3Api
 @Composable
+@RequiresPermission(
+    allOf = [
+        Manifest.permission.SCHEDULE_EXACT_ALARM,
+        Manifest.permission.POST_NOTIFICATIONS
+    ]
+)
 fun OfferCaronaScreen(navController: NavController) {
+    val context = LocalContext.current
+    val caronaTimeMillis = remember { mutableLongStateOf(System.currentTimeMillis()) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,7 +89,33 @@ fun OfferCaronaScreen(navController: NavController) {
             Button(
                 onClick = {
                     navController.popBackStack()
-                    /* Restante da Lógica de confirmação da carona */
+                    val oneHourBefore = caronaTimeMillis.longValue - 60 * 60 * 1000
+                    if (System.currentTimeMillis() >= oneHourBefore) {
+                        // Se já passou do horário, mostra a notificação imediatamente
+                        NotificationUtils.showNotification(
+                            context = context,
+                            title = "Carona Agendada",
+                            text = "Sua carona sairá em menos 1 hora!"
+                        )
+                    } else {
+                        // Caso contrário, agenda a notificação para 1 hora antes
+                        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                        val intent = Intent(context, CaronaAlarmReceiver::class.java).apply {
+                            putExtra("title", "Carona Agendada")
+                            putExtra("text", "Sua carona sairá em menos 1 hora!")
+                        }
+                        val pendingIntent = PendingIntent.getBroadcast(
+                            context,
+                            0,
+                            intent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            oneHourBefore,
+                            pendingIntent
+                        )
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,14 +137,13 @@ fun OfferCaronaScreen(navController: NavController) {
                 contentDescription = "Map Background",
                 modifier = Modifier.fillMaxWidth().fillMaxHeight(0.8f)
             )
-            DateTimePicker()
+            DateTimePicker(context, caronaTimeMillis)
         }
     }
 }
 
 @Composable
-fun DateTimePicker() {
-    val context = LocalContext.current
+fun DateTimePicker(context: Context, caronaTimeMillis: MutableState<Long>) {
     val calendar = remember { Calendar.getInstance() }
     val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
     var selectedDateTimeText by remember { mutableStateOf(dateFormat.format(calendar.time)) }
@@ -117,6 +161,7 @@ fun DateTimePicker() {
                     calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
                     calendar.set(Calendar.MINUTE, minute)
                     selectedDateTimeText = dateFormat.format(calendar.time)
+                    caronaTimeMillis.value = calendar.timeInMillis // Atualiza o estado compartilhado
                 },
                 calendar.get(Calendar.HOUR_OF_DAY),
                 calendar.get(Calendar.MINUTE),

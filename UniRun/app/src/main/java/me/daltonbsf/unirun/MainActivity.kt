@@ -1,5 +1,6 @@
 package me.daltonbsf.unirun
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -284,38 +285,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    @RequiresPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-    fun showNotification(context: Context) {
-        val channelId = "example_channel"
-        val notificationId = 1
-        // Criar o canal (necessário para Android 8+)
-        val name = "Canal de Exemplo"
-        val descriptionText = "Descrição do canal"
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(channelId, name, importance).apply {
-            description = descriptionText
-        }
-        val notificationManager: NotificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as
-                    NotificationManager
-        notificationManager.createNotificationChannel(channel)
-        // Criar a notificação
-        val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.notification_icon)
-            .setContentTitle("Título da Notificação")
-            .setContentText("Descrição da notificação.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        // Exibir a notificação
-        with(NotificationManagerCompat.from(context)) {
-            notify(notificationId, builder.build())
-        }
-    }
-
-//    @Composable
-//    fun NotificationExample(context: Context) {
-//        Button(onClick = { showNotification(context) }) {
-//            Text("Exibir Notificação")
-//        }
-//    }
 }
