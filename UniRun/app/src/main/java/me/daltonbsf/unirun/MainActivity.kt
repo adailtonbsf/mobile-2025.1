@@ -1,14 +1,18 @@
 package me.daltonbsf.unirun
 
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresPermission
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,17 +55,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
-import me.daltonbsf.unirun.models.caronaChatList
-import me.daltonbsf.unirun.models.userChatList
-import me.daltonbsf.unirun.models.userList
+import me.daltonbsf.unirun.data.UserPreferences
+import me.daltonbsf.unirun.model.caronaChatList
+import me.daltonbsf.unirun.model.userChatList
+import me.daltonbsf.unirun.model.userList
 import me.daltonbsf.unirun.ui.components.BottomNavigationBar
 import me.daltonbsf.unirun.ui.components.TopBar
 import me.daltonbsf.unirun.ui.screens.AboutScreen
@@ -80,19 +85,30 @@ import me.daltonbsf.unirun.ui.screens.UserChatScreen
 import me.daltonbsf.unirun.ui.theme.UniRunTheme
 
 class MainActivity : ComponentActivity() {
+    private lateinit var userPreferences: UserPreferences
+
+    @ExperimentalAnimationApi
+    @SuppressLint("ObsoleteSdkInt", "ScheduleExactAlarm")
+    @RequiresPermission(POST_NOTIFICATIONS)
     @ExperimentalFoundationApi
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        userPreferences = UserPreferences.getInstance(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(POST_NOTIFICATIONS), 1001)
+        }
         setContent {
+            val isDarkTheme by userPreferences.getPreference(UserPreferences.THEME_KEY, "true")
+                .collectAsState(initial = "true")
+
             var isLoggedIn = remember { mutableStateOf(false) } // PULAR LOGIN
             val navController = rememberNavController()
-            val isDarkTheme = remember { mutableStateOf(true) }
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
-            UniRunTheme (darkTheme = isDarkTheme.value) {
+            UniRunTheme(darkTheme = isDarkTheme.toBoolean()) {
                 val withoutTopBottomBar = listOf(
                     "peopleChat/{chatName}",
                     "caronaChat/{chatName}",
@@ -115,7 +131,9 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(vertical = 24.dp).fillMaxWidth()
+                                modifier = Modifier
+                                    .padding(vertical = 24.dp)
+                                    .fillMaxWidth()
                             ) {
                                 AsyncImage(
                                     model = userList[0].profileImageURL,
@@ -134,7 +152,7 @@ class MainActivity : ComponentActivity() {
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    userList[0].bio.toString(),
+                                    userList[0].bio,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
@@ -195,27 +213,67 @@ class MainActivity : ComponentActivity() {
                             topBar = {
                                 if (!withoutTopBottomBar.contains(currentRoute)) {
                                     TopBar(
-                                        onThemeToggle = { isDarkTheme.value = !isDarkTheme.value },
+                                        onThemeToggle = {
+                                            scope.launch {
+                                                val newThemeValue = (!isDarkTheme.toBoolean()).toString()
+                                                userPreferences.savePreference(UserPreferences.THEME_KEY, newThemeValue)
+                                            }
+                                        },
                                         onOpenDrawer = { scope.launch { drawerState.open() } },
-                                        isDarkTheme.value
+                                        isDarkTheme.toBoolean()
                                     )
                                 }
                             },
                             bottomBar = {
                                 if (!withoutTopBottomBar.contains(currentRoute)) {
-                                    BottomNavigationBar(navController) }
+                                    BottomNavigationBar(navController)
+                                }
                             }
                         ) { innerPadding ->
                             NavHost(
                                 navController = navController,
                                 startDestination = if (isLoggedIn.value) "chats/people" else "login",
-                                Modifier.padding(innerPadding)
+                                enterTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeIn(animationSpec = tween(0))
+                                    } else {
+                                        slideInHorizontally(initialOffsetX = { it })
+                                    }
+                                },
+                                exitTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeOut(animationSpec = tween(0))
+                                    } else {
+                                        slideOutHorizontally(targetOffsetX = { -it })
+                                    }
+                                },
+                                popEnterTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeIn(animationSpec = tween(0))
+                                    } else {
+                                        slideInHorizontally(initialOffsetX = { -it })
+                                    }
+                                },
+                                popExitTransition = {
+                                    if (isChatSwitch(initialState, targetState)) {
+                                        fadeOut(animationSpec = tween(0))
+                                    } else {
+                                        slideOutHorizontally(targetOffsetX = { it })
+                                    }
+                                },
+                                modifier = Modifier.padding(innerPadding)
                             ) {
                                 composable("login") {
                                     LoginScreen(
                                         navController,
-                                        { isDarkTheme.value = !isDarkTheme.value },
-                                        isDarkTheme.value )
+                                        {
+                                            scope.launch {
+                                                val newThemeValue = (!isDarkTheme.toBoolean()).toString()
+                                                userPreferences.savePreference(UserPreferences.THEME_KEY, newThemeValue)
+                                            }
+                                        },
+                                        isDarkTheme.toBoolean()
+                                    )
                                 }
                                 composable("registration") {
                                     RegistrationScreen {
@@ -285,4 +343,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+fun isChatSwitch(from: NavBackStackEntry, to: NavBackStackEntry): Boolean {
+    val fromRoute = from.destination.route
+    val toRoute = to.destination.route
+    return (fromRoute == "chats/people" && toRoute == "chats/carona") ||
+            (fromRoute == "chats/carona" && toRoute == "chats/people")
 }

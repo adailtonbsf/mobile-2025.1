@@ -19,7 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import me.daltonbsf.unirun.models.User
+import me.daltonbsf.unirun.model.User
 import me.daltonbsf.unirun.R
 
 @Composable
@@ -47,7 +47,7 @@ fun UserDetailsCard(user: User, navController: NavController) {
             ) {
                 Text(text = user.name, style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    text = if (user.bio != "") user.bio.toString()
+                    text = if (user.bio != "") user.bio
                     else "Usuário(a) desde: ${user.registrationDate}",
                     style = MaterialTheme.typography.bodyMedium,
                     overflow = TextOverflow.Ellipsis,
