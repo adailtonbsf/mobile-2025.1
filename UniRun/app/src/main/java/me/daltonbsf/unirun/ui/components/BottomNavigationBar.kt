@@ -29,6 +29,7 @@ fun BottomNavigationBar(navController: NavController) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
         items.forEach { (route, label, icon) ->
+            val isChat = route == "chats/people"
             NavigationBarItem(
                 icon = {
                     when (icon) {
@@ -41,7 +42,7 @@ fun BottomNavigationBar(navController: NavController) {
                     }
                 },
                 label = { Text(label) },
-                selected = currentRoute == route,
+                selected = if (isChat) currentRoute == "chats/people" || currentRoute == "chats/carona" else currentRoute == route,
                 onClick = {
                     navController.navigate(route) {
                         popUpTo(navController.graph.startDestinationId)

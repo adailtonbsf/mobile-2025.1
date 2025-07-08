@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import me.daltonbsf.unirun.models.caronaChatList
+import me.daltonbsf.unirun.model.caronaChatList
 import me.daltonbsf.unirun.ui.components.ChatSwitchButton
 import me.daltonbsf.unirun.ui.components.ChatCard
 

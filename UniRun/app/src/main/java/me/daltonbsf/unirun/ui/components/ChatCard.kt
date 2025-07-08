@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.models.CaronaChat
-import me.daltonbsf.unirun.models.ChatInterface
-import me.daltonbsf.unirun.models.UserChat
+import me.daltonbsf.unirun.model.CaronaChat
+import me.daltonbsf.unirun.model.ChatInterface
+import me.daltonbsf.unirun.model.UserChat
 import java.time.Duration
 import java.time.LocalDateTime
 
