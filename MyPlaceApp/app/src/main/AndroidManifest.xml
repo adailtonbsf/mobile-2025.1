@@ -17,7 +17,7 @@
         <!-- Aqui você coloca a meta-data da API_KEY do Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="REMOVIDO"/>
+            android:value="***REMOVIDO***"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
