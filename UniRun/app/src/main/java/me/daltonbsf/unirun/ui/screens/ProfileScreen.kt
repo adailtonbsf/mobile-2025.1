@@ -91,7 +91,7 @@ fun ProfileScreen(user: User) {
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = user.registrationDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
+            text = user.registrationDate!!.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )

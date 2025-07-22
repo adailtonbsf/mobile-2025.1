@@ -1,21 +1,47 @@
 package me.daltonbsf.unirun.model
 
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
+@Serializable
 data class User(
-    val email: String,
+    val uid: String,
+    var email: String?,
     var name: String,
     var username: String,
-    var phone: String? = null,
-    var profileImageURL: String? = null,
-    val registrationDate: LocalDate,
-    var bio: String = "",
-    var offeredRidesCount: Int = 0,
-    var requestedRidesCount: Int = 0
+    var phone: String,
+    var profileImageURL: String?,
+    var bio: String,
+    @Serializable(with = LocalDateSerializer::class) // Adicione para LocalDate
+    val registrationDate: LocalDate?,
+    var offeredRidesCount: Int,
+    var requestedRidesCount: Int
 )
 
-var userList = listOf(
-    User("Alice", "Alice", "alice123", "1234567890", "https://i.pinimg.com/736x/19/99/5e/19995e098e2f6f5e029f2c9a79fb62ab.jpg", LocalDate.now(), bio = "Estudante de Engenharia de Software"),
-    User("Bob", "Bob", "bob123", "0987654321", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxEy9UzgJT8kDAPkT0bz8-MxQWKHz1KNRlkQ&s", LocalDate.now()),
-    User("Charlie", "Charlie", "charlie123", "1122334455", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAuUNMtLhNHgbw51Dtfckd_JvggnZkC0fSXg&s", LocalDate.now())
-)
+// Crie um serializador para LocalDate
+object LocalDateSerializer : KSerializer<LocalDate?> {
+    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override fun serialize(encoder: Encoder, value: LocalDate?) {
+        if (value != null) {
+            encoder.encodeString(value.format(formatter))
+        } else {
+            encoder.encodeNull()
+        }
+    }
+
+    override fun deserialize(decoder: Decoder): LocalDate? {
+        val string = decoder.decodeString()
+        return if (string.isNotBlank()) LocalDate.parse(string, formatter) else null
+    }
+}

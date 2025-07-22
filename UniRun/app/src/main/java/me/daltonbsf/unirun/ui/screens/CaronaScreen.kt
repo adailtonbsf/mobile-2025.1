@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import me.daltonbsf.unirun.model.caronaList
+//import me.daltonbsf.unirun.model.caronaList
 import me.daltonbsf.unirun.ui.components.CaronaCard
 
 @Composable
@@ -45,9 +45,9 @@ fun CaronaScreen(navController: NavController) {
                     navController.navigate("caronaDetails/1")
                 }
         ) {
-            CaronaCard(
+            /*CaronaCard( TODO: Implementar o CaronaRepository
                 caronaList[0], false
-            )
+            )*/
         }
         Card(
             modifier = Modifier
@@ -56,9 +56,9 @@ fun CaronaScreen(navController: NavController) {
                     navController.navigate("caronaDetails/2")
                 }
         ) {
-            CaronaCard(
+            /*CaronaCard( TODO: Implementar o CaronaRepository
                 caronaList[1], true
-            )
+            )*/
         }
     }
 }

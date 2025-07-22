@@ -10,11 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import me.daltonbsf.unirun.model.caronaChatList
+//import me.daltonbsf.unirun.model.caronaChatList
 import me.daltonbsf.unirun.ui.components.ChatSwitchButton
 import me.daltonbsf.unirun.ui.components.ChatCard
 
-@Composable
+/*@Composable TODO: Implementar o CaronaChatRepository
 fun CaronaChatScreen(navController: NavController) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         ChatSwitchButton(navController, false)
@@ -36,4 +36,4 @@ fun CaronaChatScreen(navController: NavController) {
             }
         }
     }
-}
+}*/

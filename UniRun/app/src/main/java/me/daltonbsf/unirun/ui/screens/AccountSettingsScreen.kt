@@ -31,7 +31,7 @@ fun AccountSettingsScreen(currentUser: User, navController: NavController) {
 
     var name by remember { mutableStateOf(currentUser.name) }
     var username by remember { mutableStateOf(currentUser.username) }
-    var phone by remember { mutableStateOf(currentUser.phone ?: "") }
+    var phone by remember { mutableStateOf(currentUser.phone) }
     var bio by remember { mutableStateOf(currentUser.bio) }
 
     Column(
@@ -85,9 +85,9 @@ fun AccountSettingsScreen(currentUser: User, navController: NavController) {
             onClick = {
                 currentUser.name = name
                 currentUser.username = username
-                currentUser.phone = phone.ifBlank { null }
+                currentUser.phone = phone
                 currentUser.bio = bio
-                 navController.popBackStack()
+                navController.popBackStack()
             },
             modifier = Modifier.fillMaxWidth()
         ) {

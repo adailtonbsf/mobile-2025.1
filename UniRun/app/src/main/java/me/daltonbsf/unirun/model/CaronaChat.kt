@@ -18,7 +18,7 @@ data class CaronaChat(
     }
 }
 
-val caronaChatList = listOf(
+/*val caronaChatList = listOf(
     CaronaChat(
         "Alice",
         "Carona para a aula de Algoritmos",
@@ -41,4 +41,4 @@ val caronaChatList = listOf(
         ),
         profileImageURL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxEy9UzgJT8kDAPkT0bz8-MxQWKHz1KNRlkQ&s",
     )
-)
+)*/
