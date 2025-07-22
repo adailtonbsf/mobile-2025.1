@@ -33,8 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.model.caronaList
-import me.daltonbsf.unirun.model.userList
+//import me.daltonbsf.unirun.model.caronaList
+//import me.daltonbsf.unirun.model.userList
 import me.daltonbsf.unirun.ui.components.UserCard
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -49,7 +49,7 @@ fun VerticalDivider(modifier: Modifier = Modifier, color: Color = MaterialTheme.
     )
 }
 
-@ExperimentalMaterial3Api
+/*@ExperimentalMaterial3Api TODO: Implementar o CaronaRepository
 @Composable
 fun CaronaDetailsScreen(
     caronaId: String,
@@ -133,4 +133,4 @@ fun CaronaDetailsScreen(
             UserCard(userList[0], navController)
         }
     }
-}
+}*/

@@ -14,7 +14,7 @@ class CaronaAlarmReceiver : BroadcastReceiver() {
         NotificationUtils.showNotification(
             context = context,
             title = title,
-            text = text
+            message = text
         )
     }
 }

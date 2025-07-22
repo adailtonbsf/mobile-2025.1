@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
@@ -45,8 +46,6 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,17 +61,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
+import me.daltonbsf.unirun.data.AuthRepository
 import me.daltonbsf.unirun.data.UserPreferences
-import me.daltonbsf.unirun.model.caronaChatList
+//import me.daltonbsf.unirun.model.caronaChatList
 import me.daltonbsf.unirun.model.userChatList
-import me.daltonbsf.unirun.model.userList
 import me.daltonbsf.unirun.ui.components.BottomNavigationBar
 import me.daltonbsf.unirun.ui.components.TopBar
 import me.daltonbsf.unirun.ui.screens.AboutScreen
 import me.daltonbsf.unirun.ui.screens.AccountSettingsScreen
-import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
-import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
-import me.daltonbsf.unirun.ui.screens.CaronaProfileScreen
+//import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
+//import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
+//import me.daltonbsf.unirun.ui.screens.CaronaProfileScreen
 import me.daltonbsf.unirun.ui.screens.CaronaScreen
 import me.daltonbsf.unirun.ui.screens.ChatScreen
 import me.daltonbsf.unirun.ui.screens.ConfigScreen
@@ -83,9 +82,16 @@ import me.daltonbsf.unirun.ui.screens.ProfileScreen
 import me.daltonbsf.unirun.ui.screens.RegistrationScreen
 import me.daltonbsf.unirun.ui.screens.UserChatScreen
 import me.daltonbsf.unirun.ui.theme.UniRunTheme
+import me.daltonbsf.unirun.viewmodel.AuthViewModel
+import me.daltonbsf.unirun.viewmodel.AuthViewModelFactory
 
 class MainActivity : ComponentActivity() {
+
     private lateinit var userPreferences: UserPreferences
+
+    private val authViewModel: AuthViewModel by viewModels {
+        AuthViewModelFactory(AuthRepository(), userPreferences)
+    }
 
     @ExperimentalAnimationApi
     @SuppressLint("ObsoleteSdkInt", "ScheduleExactAlarm")
@@ -94,7 +100,7 @@ class MainActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        userPreferences = UserPreferences.getInstance(this)
+        userPreferences = UserPreferences.getInstance(applicationContext) // Inicialize aqui
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(POST_NOTIFICATIONS), 1001)
         }
@@ -102,12 +108,12 @@ class MainActivity : ComponentActivity() {
             val isDarkTheme by userPreferences.getPreference(UserPreferences.THEME_KEY, "true")
                 .collectAsState(initial = "true")
 
-            var isLoggedIn = remember { mutableStateOf(false) } // PULAR LOGIN
             val navController = rememberNavController()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
+            val currentUser by authViewModel.user.collectAsState()
             UniRunTheme(darkTheme = isDarkTheme.toBoolean()) {
                 val withoutTopBottomBar = listOf(
                     "peopleChat/{chatName}",
@@ -129,35 +135,37 @@ class MainActivity : ComponentActivity() {
                                 .padding(32.dp),
                             horizontalAlignment = Alignment.Start
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .padding(vertical = 24.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                AsyncImage(
-                                    model = userList[0].profileImageURL,
-                                    contentDescription = "Foto de Perfil",
+                            currentUser?.let { user ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
-                                        .padding(8.dp)
-                                        .size(64.dp)
-                                        .clip(CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    userList[0].name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    userList[0].bio,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.Center
-                                )
+                                        .padding(vertical = 24.dp)
+                                        .fillMaxWidth()
+                                ) {
+                                    AsyncImage(
+                                        model = user.profileImageURL,
+                                        contentDescription = "Foto de Perfil",
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .size(64.dp)
+                                            .clip(CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        user.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        user.bio,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                             HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                             Spacer(modifier = Modifier.height(16.dp))
@@ -186,7 +194,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                             DrawerItem(
-                                icon = Icons.Default.Info, // Use um ícone apropriado
+                                icon = Icons.Default.Info,
                                 label = "FAQ",
                                 onClick = {
                                     scope.launch { drawerState.close() }
@@ -203,7 +211,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("login") {
                                         popUpTo(0) { inclusive = true }
                                     }
-                                    isLoggedIn.value = false
+                                    authViewModel.logout()
                                 }
                             )
                         }
@@ -232,7 +240,7 @@ class MainActivity : ComponentActivity() {
                         ) { innerPadding ->
                             NavHost(
                                 navController = navController,
-                                startDestination = if (isLoggedIn.value) "chats/people" else "login",
+                                startDestination = if (authViewModel.isUserLoggedIn()) "chats/people" else "login",
                                 enterTransition = {
                                     if (isChatSwitch(initialState, targetState)) {
                                         fadeIn(animationSpec = tween(0))
@@ -266,7 +274,8 @@ class MainActivity : ComponentActivity() {
                                 composable("login") {
                                     LoginScreen(
                                         navController,
-                                        {
+                                        authViewModel,
+                                        onThemeToggle = {
                                             scope.launch {
                                                 val newThemeValue = (!isDarkTheme.toBoolean()).toString()
                                                 userPreferences.savePreference(UserPreferences.THEME_KEY, newThemeValue)
@@ -276,29 +285,32 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable("registration") {
-                                    RegistrationScreen {
-                                        isLoggedIn.value = true
-                                        navController.navigate("chats/people") {
-                                            popUpTo(0) { inclusive = true }
+                                    RegistrationScreen(
+                                        authViewModel,
+                                        backToLogin = {
+                                            navController.navigate("login") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
-                                    }
+                                    )
                                 }
                                 composable("faq") { FAQScreen() }
                                 composable("chats/people") { UserChatScreen(navController) }
-                                composable("chats/carona") { CaronaChatScreen(navController) }
+                                //composable("chats/carona") { CaronaChatScreen(navController) } TODO: Implementar o CaronaChatRepository
                                 composable("carona") { CaronaScreen(navController) }
                                 composable("offerCarona") { OfferCaronaScreen(navController) }
                                 composable("config") { ConfigScreen(navController) }
-                                composable("accountSettings") { AccountSettingsScreen(userList[0], navController) }
+                                composable("accountSettings") { AccountSettingsScreen(currentUser!!, navController) }
                                 composable("about") { AboutScreen() }
-                                composable("profile") { ProfileScreen(userList[0]) }
+                                composable("profile") { ProfileScreen(currentUser!!) }
                                 composable("peopleChat/{chatName}") { navBackStackEntry ->
                                     val chatName = navBackStackEntry.arguments?.getString("chatName")
                                     if (chatName != null) {
                                         ChatScreen(userChatList.first(), navController)
                                     }
                                 }
-                                composable("caronaChat/{chatName}") { navBackStackEntry ->
+                                // TODO: DESCOMENTAR ISSO QUANDO IMPLEMENTAR O CHAT DE CARONA
+                                /*composable("caronaChat/{chatName}") { navBackStackEntry ->
                                     val chatName = navBackStackEntry.arguments?.getString("chatName")
                                     if (chatName != null) {
                                         ChatScreen(caronaChatList.first(), navController)
@@ -309,11 +321,11 @@ class MainActivity : ComponentActivity() {
                                     if (chatName != null) {
                                         CaronaProfileScreen(caronaChatList.first(), navController)
                                     }
-                                }
+                                }*/
                                 composable("caronaDetails/{caronaId}") { navBackStackEntry ->
                                     val caronaId = navBackStackEntry.arguments?.getString("caronaId")
                                     if (caronaId != null) {
-                                        CaronaDetailsScreen(caronaId, navController)
+                                        //CaronaDetailsScreen(caronaId, navController) TODO: Implementar o CaronaRepository
                                     }
                                 }
                             }

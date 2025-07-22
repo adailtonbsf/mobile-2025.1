@@ -30,10 +30,10 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import me.daltonbsf.unirun.R
 import me.daltonbsf.unirun.model.CaronaChat
-import me.daltonbsf.unirun.model.userList
+//import me.daltonbsf.unirun.model.userList
 import me.daltonbsf.unirun.ui.components.UserDetailsCard
 
-@ExperimentalMaterial3Api
+/*@ExperimentalMaterial3Api TODO: Implementar o CaronaChatRepository
 @Composable
 fun CaronaProfileScreen(caronaChat: CaronaChat, navController: NavController) {
     Scaffold(
@@ -121,4 +121,4 @@ fun CaronaProfileScreen(caronaChat: CaronaChat, navController: NavController) {
             }
         }
     }
-}
+}*/

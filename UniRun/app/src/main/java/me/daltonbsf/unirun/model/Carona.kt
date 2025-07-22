@@ -14,7 +14,7 @@ data class Carona(
     val seatsAvailable: Int
 )
 
-val caronaList = listOf(
+/*val caronaList = listOf( TODO: Implementar o CaronaRepository
     Carona(
         id = "1",
         creator = "Alice",
@@ -37,4 +37,4 @@ val caronaList = listOf(
         destiny = "Campus C",
         seatsAvailable = 2
     )
-)
+)*/
