@@ -57,9 +57,11 @@ fun UserChatScreen(
     var chatWithTitles by remember { mutableStateOf<List<Pair<Chat, String>>>(emptyList()) }
 
     LaunchedEffect(userChatList) {
-        val titles = userChatList.map { chat ->
-            chat to chatViewModel.getChatTitle(chat)
-        }
+        val titles = userChatList
+            .filter { it.type == "private" }
+            .map { chat ->
+                chat to chatViewModel.getChatTitle(chat)
+            }
         chatWithTitles = titles
     }
 
