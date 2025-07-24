@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import me.daltonbsf.unirun.model.User
 import me.daltonbsf.unirun.util.SupabaseManager
 import java.time.LocalDate
 
@@ -244,13 +245,12 @@ class AuthRepository {
         }
     }
 
-    suspend fun getUserRegistrationDate(): LocalDate? {
+    suspend fun getUserRegistrationDate(): String? {
         return try {
             val uid = auth.currentUser?.uid
             if (uid != null) {
                 val snapshot = firestore.collection("users").document(uid).get().await()
-                val dateString = snapshot.getString("registrationDate")
-                dateString?.let { LocalDate.parse(it) }
+                snapshot.getString("registrationDate")
             } else {
                 null
             }
@@ -379,6 +379,40 @@ class AuthRepository {
         } catch (e: Exception) {
             Log.e("AuthRepository", "Failed to send email verification: ${e.message}")
             false
+        }
+    }
+
+    suspend fun searchUsers(query: String): List<User> {
+        return try {
+            if (query.isBlank()) {
+                return emptyList()
+            }
+            val currentUserUid = auth.currentUser?.uid ?: return emptyList()
+
+            val snapshot = firestore.collection("users")
+                .orderBy("username")
+                .startAt(query)
+                .endAt(query + '\uf8ff')
+                .limit(10)
+                .get()
+                .await()
+
+            val users = snapshot.toObjects(User::class.java)
+            // Filtra o usuário logado da lista de resultados
+            users.filter { it.uid != currentUserUid }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Failed to search users: ${e.message}")
+            emptyList()
+        }
+    }
+
+    suspend fun getUserData(userId: String): User? {
+        return try {
+            val snapshot = firestore.collection("users").document(userId).get().await()
+            snapshot.toObject(User::class.java)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Failed to get user data for $userId: ${e.message}")
+            null
         }
     }
 }

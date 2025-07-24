@@ -1,9 +1,7 @@
 package me.daltonbsf.unirun.ui.screens
 
-import android.Manifest.permission.POST_NOTIFICATIONS
 import android.annotation.SuppressLint
-import androidx.annotation.RequiresPermission
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,9 +31,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,40 +48,64 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.model.CaronaChat
-import me.daltonbsf.unirun.model.ChatInterface
 import me.daltonbsf.unirun.model.Message
-import me.daltonbsf.unirun.model.UserChat
-import me.daltonbsf.unirun.model.userChatList
+import me.daltonbsf.unirun.model.getName
+import me.daltonbsf.unirun.viewmodel.AuthViewModel
+import me.daltonbsf.unirun.viewmodel.ChatViewModel
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@RequiresPermission(POST_NOTIFICATIONS)
 @ExperimentalMaterial3Api
 @Composable
-fun ChatScreen(chat: ChatInterface, navController: NavController) {
+fun ChatScreen(
+    chatId: String,
+    navController: NavController,
+    chatViewModel: ChatViewModel,
+    authViewModel: AuthViewModel
+) {
     var messageText by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
+    val chatList by chatViewModel.chatList.collectAsState()
+    val messages by chatViewModel.messages.collectAsState()
+    val currentUser by authViewModel.user.collectAsState()
+
+    val chat = remember(chatList, chatId) {
+        chatList.find { it.id == chatId }
+    }
+
+    var chatTitle by remember { mutableStateOf("") }
+
+    LaunchedEffect(chat) {
+        if (chat != null) {
+            chatTitle = chatViewModel.getChatTitle(chat)
+        }
+    }
+
+    LaunchedEffect(chatId) {
+        chatViewModel.loadMessages(chatId)
+    }
+
+    LaunchedEffect(messages) {
+        if (messages.isNotEmpty()) {
+            // Rola para o item mais recente (no topo da lista invertida)
+            listState.animateScrollToItem(0)
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                            if (chat is CaronaChat) {
-                                Modifier.clickable { navController.navigate("caronaProfile/${chat.getName()}") }
-                            } else {
-                                Modifier
-                            }
-                    ) {
-                        AsyncImage(
-                            model = chat.profileImageURL,
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.placeholder),
                             contentDescription = "Profile Image",
-                            placeholder = painterResource(R.drawable.placeholder),
-                            error = painterResource(R.drawable.error),
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape),
@@ -87,7 +113,7 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            chat.getName(),
+                            text = chatTitle,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -95,10 +121,7 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -115,18 +138,19 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
                 .padding(innerPadding)
         ) {
             LazyColumn(
+                state = listState,
+                reverseLayout = true, // Adicionado para layout de baixo para cima
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 8.dp)
-                    .padding(bottom = 8.dp),
-                reverseLayout = true
+                    .padding(bottom = 8.dp)
             ) {
-                items(chat.messages.toList().reversed()) { message ->
-                    if (chat is UserChat) {
-                        MessageBubble(message)
-                    } else if (chat is CaronaChat) {
-                        GroupMessageBubble(message, chat.profileImageURL)
-                    }
+                items(messages) { message ->
+                    MessageBubble(
+                        message = message,
+                        isFromCurrentUser = message.senderId == currentUser?.uid,
+                        isGroupChat = chat?.type == "group"
+                    )
                 }
             }
 
@@ -145,19 +169,13 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
                 )
                 IconButton(onClick = {
                     if (messageText.isNotBlank()) {
-                        val newMessage = Message(
-                            id = (chat.messages.maxOfOrNull { it.id } ?: 0) + 1,
-                            sender = "me",
-                            receiver = chat.getName(),
-                            content = messageText,
-                            date = LocalDateTime.now()
-                        )
-                        chat.messages.add(newMessage)
-                        messageText = ""
-                        // NotificationUtils.showNotification(context, "Nova mensagem", newMessage.content) // Exibe a notificação
+                        coroutineScope.launch {
+                            chatViewModel.sendMessage(chatId, messageText)
+                            messageText = ""
+                        }
                     }
                 }) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar mensagem")
+                    Icon(Icons.AutoMirrored.Filled.Send, "Enviar mensagem")
                 }
             }
         }
@@ -166,7 +184,7 @@ fun ChatScreen(chat: ChatInterface, navController: NavController) {
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
-fun MessageBubble(message: Message) {
+fun MessageBubble(message: Message, isFromCurrentUser: Boolean, isGroupChat: Boolean) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
 
@@ -174,97 +192,48 @@ fun MessageBubble(message: Message) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        horizontalArrangement = if (message.sender == "me") Arrangement.End else Arrangement.Start
-    ) {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            tonalElevation = 1.dp,
-            modifier = Modifier.widthIn(max = screenWidth * 0.8f),
-            color = if (message.sender == "me") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-        ) {
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text(text = message.content)
-                Text(
-                    text = message.date.format(DateTimeFormatter.ofPattern("HH:mm")),
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                    modifier = Modifier.align(Alignment.End)
-                )
-            }
-        }
-    }
-}
-
-@SuppressLint("ConfigurationScreenWidthHeight")
-@Composable
-fun GroupMessageBubble(message: Message, model: String) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = if (message.sender == "me") Arrangement.End else Arrangement.Start,
+        horizontalArrangement = if (isFromCurrentUser) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.Bottom
     ) {
-        if (message.sender != "me") {
-            AsyncImage(
-                model = when (message.sender) {
-                    "Alice" -> userChatList[0].profileImageURL
-                    "Bob" -> userChatList[1].profileImageURL
-                    "Charlie" -> userChatList[2].profileImageURL
-                    else -> ""
-                },
+        if (!isFromCurrentUser) {
+            Image(
+                painter = painterResource(id = R.drawable.placeholder),
                 contentDescription = "Sender Image",
-                placeholder = painterResource(R.drawable.placeholder),
-                error = painterResource(R.drawable.error),
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(32.dp)
                     .clip(CircleShape)
                     .padding(end = 4.dp),
                 contentScale = ContentScale.Crop
             )
         }
+
         Surface(
             shape = RoundedCornerShape(8.dp),
             tonalElevation = 1.dp,
             modifier = Modifier.widthIn(max = screenWidth * 0.8f),
-            color = if (message.sender == "me") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+            color = if (isFromCurrentUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
         ) {
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
-                if (message.sender != "me") {
+            Column(modifier = Modifier.padding(8.dp)) {
+                if (isGroupChat && !isFromCurrentUser) {
                     Text(
-                        text = message.sender,
+                        text = message.senderName,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp, color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.7f)
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                         ),
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                 }
                 Text(text = message.content)
                 Text(
-                    text = message.date.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    text = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(message.timestamp),
+                        ZoneId.systemDefault()
+                    ).format(DateTimeFormatter.ofPattern("HH:mm")),
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                     modifier = Modifier.align(Alignment.End)
                 )
             }
-        }
-        if (message.sender == "me") {
-            AsyncImage(
-                model = model,
-                contentDescription = "Sender Image",
-                placeholder = painterResource(R.drawable.placeholder),
-                error = painterResource(R.drawable.error),
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .padding(start = 4.dp),
-                contentScale = ContentScale.Crop
-            )
         }
     }
 }

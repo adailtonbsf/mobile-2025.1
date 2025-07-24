@@ -18,6 +18,8 @@ class AuthViewModel(
 ) : ViewModel() {
     var loginResult: ((Boolean) -> Unit)? = null
     var registerResult: ((Boolean) -> Unit)? = null
+    private val _searchResults = MutableStateFlow<List<User>>(emptyList())
+    val searchResults = _searchResults.asStateFlow()
 
     private val _user = MutableStateFlow<User?>(null)
     val user = _user.asStateFlow()
@@ -192,5 +194,19 @@ class AuthViewModel(
             loadCurrentUser()
         }
         return success
+    }
+
+    fun searchUsers(query: String) {
+        viewModelScope.launch {
+            if (query.length > 2) {
+                _searchResults.value = repository.searchUsers(query)
+            } else {
+                _searchResults.value = emptyList()
+            }
+        }
+    }
+
+    suspend fun getUserData(userId: String): User? {
+        return repository.getUserData(userId)
     }
 }

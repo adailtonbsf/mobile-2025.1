@@ -62,9 +62,9 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import me.daltonbsf.unirun.data.AuthRepository
+import me.daltonbsf.unirun.data.ChatRepository
 import me.daltonbsf.unirun.data.UserPreferences
 //import me.daltonbsf.unirun.model.caronaChatList
-import me.daltonbsf.unirun.model.userChatList
 import me.daltonbsf.unirun.ui.components.BottomNavigationBar
 import me.daltonbsf.unirun.ui.components.TopBar
 import me.daltonbsf.unirun.ui.screens.AboutScreen
@@ -84,6 +84,8 @@ import me.daltonbsf.unirun.ui.screens.UserChatScreen
 import me.daltonbsf.unirun.ui.theme.UniRunTheme
 import me.daltonbsf.unirun.viewmodel.AuthViewModel
 import me.daltonbsf.unirun.viewmodel.AuthViewModelFactory
+import me.daltonbsf.unirun.viewmodel.ChatViewModel
+import me.daltonbsf.unirun.viewmodel.ChatViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -91,6 +93,10 @@ class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels {
         AuthViewModelFactory(AuthRepository(), userPreferences)
+    }
+
+    private val chatViewModel: ChatViewModel by viewModels {
+        ChatViewModelFactory(ChatRepository(), AuthRepository())
     }
 
     @ExperimentalAnimationApi
@@ -116,11 +122,11 @@ class MainActivity : ComponentActivity() {
             val currentUser by authViewModel.user.collectAsState()
             UniRunTheme(darkTheme = isDarkTheme.toBoolean()) {
                 val withoutTopBottomBar = listOf(
-                    "peopleChat/{chatName}",
-                    "caronaChat/{chatName}",
+                    "peopleChat/{chatId}",
+                    "caronaChat/{chatId}",
                     "offerCarona",
                     "caronaDetails/{caronaId}",
-                    "caronaProfile/{chatName}",
+                    "caronaProfile/{chatId}",
                     "login",
                     "registration"
                 )
@@ -295,7 +301,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable("faq") { FAQScreen() }
-                                composable("chats/people") { UserChatScreen(navController) }
+                                composable("chats/people") { UserChatScreen(navController, chatViewModel, authViewModel) }
                                 //composable("chats/carona") { CaronaChatScreen(navController) } TODO: Implementar o CaronaChatRepository
                                 composable("carona") { CaronaScreen(navController) }
                                 composable("offerCarona") { OfferCaronaScreen(navController) }
@@ -303,10 +309,10 @@ class MainActivity : ComponentActivity() {
                                 composable("accountSettings") { AccountSettingsScreen(currentUser!!, navController) }
                                 composable("about") { AboutScreen() }
                                 composable("profile") { ProfileScreen(currentUser!!) }
-                                composable("peopleChat/{chatName}") { navBackStackEntry ->
-                                    val chatName = navBackStackEntry.arguments?.getString("chatName")
-                                    if (chatName != null) {
-                                        ChatScreen(userChatList.first(), navController)
+                                composable("peopleChat/{chatId}") { navBackStackEntry ->
+                                    val chatId = navBackStackEntry.arguments?.getString("chatId")
+                                    if (chatId != null) {
+                                        ChatScreen(chatId, navController, chatViewModel, authViewModel)
                                     }
                                 }
                                 // TODO: DESCOMENTAR ISSO QUANDO IMPLEMENTAR O CHAT DE CARONA

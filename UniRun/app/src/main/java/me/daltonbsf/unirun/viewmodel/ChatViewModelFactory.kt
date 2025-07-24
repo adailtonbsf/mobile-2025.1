@@ -3,16 +3,16 @@ package me.daltonbsf.unirun.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import me.daltonbsf.unirun.data.AuthRepository
-import me.daltonbsf.unirun.data.UserPreferences
+import me.daltonbsf.unirun.data.ChatRepository
 
-class AuthViewModelFactory(
-    private val repository: AuthRepository,
-    private val userPreferences: UserPreferences
+class ChatViewModelFactory(
+    private val chatRepository: ChatRepository,
+    private val authRepository: AuthRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return AuthViewModel(repository, userPreferences) as T
+            return ChatViewModel(chatRepository, authRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

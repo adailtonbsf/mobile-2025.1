@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.model.CaronaChat
 //import me.daltonbsf.unirun.model.userList
 import me.daltonbsf.unirun.ui.components.UserDetailsCard
 

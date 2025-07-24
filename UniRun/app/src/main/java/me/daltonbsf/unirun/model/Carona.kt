@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 data class Carona(
     val id: String,
     val creator: String,
-    val caronaChat: CaronaChat,
+    //val caronaChat: CaronaChat,
     val description: String,
     val creationDate: LocalDateTime,
     val departureDate: LocalDateTime,
