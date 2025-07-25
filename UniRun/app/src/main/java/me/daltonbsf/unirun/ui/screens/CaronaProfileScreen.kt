@@ -46,6 +46,7 @@ import me.daltonbsf.unirun.model.User
 import me.daltonbsf.unirun.ui.components.UserDetailsCard
 import me.daltonbsf.unirun.viewmodel.AuthViewModel
 import me.daltonbsf.unirun.viewmodel.CaronaViewModel
+import me.daltonbsf.unirun.viewmodel.ChatViewModel
 
 @RequiresPermission(POST_NOTIFICATIONS)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +55,8 @@ fun CaronaProfileScreen(
     caronaId: String,
     navController: NavController,
     caronaViewModel: CaronaViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    chatViewModel: ChatViewModel
 ) {
     val carona by caronaViewModel.selectedCarona.collectAsState()
     var creator by remember { mutableStateOf<User?>(null) }
@@ -189,7 +191,7 @@ fun CaronaProfileScreen(
                     )
                     LazyColumn {
                         items(participants) { user ->
-                            UserDetailsCard(user, navController)
+                            UserDetailsCard(user, navController, chatViewModel)
                         }
                     }
                 }

@@ -21,12 +21,17 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import me.daltonbsf.unirun.model.User
 import me.daltonbsf.unirun.R
+import me.daltonbsf.unirun.viewmodel.ChatViewModel
 
 @Composable
-fun UserDetailsCard(user: User, navController: NavController) {
+fun UserDetailsCard(user: User, navController: NavController, chatViewModel: ChatViewModel) {
     Card (
         modifier = Modifier
-            .clickable(onClick = { navController.navigate("peopleChat/${user.name}") })
+            .clickable(onClick = {
+                chatViewModel.createPrivateChat(user.uid) { chatId ->
+                    navController.navigate("peopleChat/$chatId")
+                }
+            })
             .fillMaxWidth()
             .padding(8.dp),
         shape = MaterialTheme.shapes.small

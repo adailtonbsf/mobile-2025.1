@@ -45,7 +45,7 @@ class CaronaViewModel(
             val allCaronas = caronaRepository.getAllCaronas()
             val currentUser = authRepository.getCurrentUser()?.uid
             if (currentUser != null) {
-                _availableCaronas.value = allCaronas.filter { it.creator != currentUser }
+                _availableCaronas.value = allCaronas.filter { !it.participants.contains(currentUser) }
             } else {
                 _availableCaronas.value = allCaronas
             }

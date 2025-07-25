@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,16 +43,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.launch
-import me.daltonbsf.unirun.R
 import me.daltonbsf.unirun.model.Carona
 import me.daltonbsf.unirun.model.Message
+import me.daltonbsf.unirun.model.User
 import me.daltonbsf.unirun.viewmodel.AuthViewModel
 import me.daltonbsf.unirun.viewmodel.CaronaViewModel
 import me.daltonbsf.unirun.viewmodel.ChatViewModel
@@ -83,13 +85,19 @@ fun ChatScreen(
 
     var chatTitle by remember { mutableStateOf("") }
     var carona by remember { mutableStateOf<Carona?>(null) }
+    var otherUser by remember { mutableStateOf<User?>(null) }
 
-    LaunchedEffect(chat) {
+    LaunchedEffect(chat, currentUser) {
         if (chat != null) {
             chatTitle = chatViewModel.getChatTitle(chat)
             if (chat.type == "group") {
                 caronaViewModel.findCaronaByChatId(chat.id) { result ->
                     carona = result
+                }
+            } else if (chat.type == "private") {
+                val otherUserId = chat.participants.firstOrNull { it != currentUser?.uid }
+                if (otherUserId != null) {
+                    otherUser = authViewModel.getUserData(otherUserId)
                 }
             }
         }
@@ -119,14 +127,25 @@ fun ChatScreen(
                             Modifier
                         }
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                            contentDescription = "Chat Icon",
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                        val imageModifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+
+                        if (chat?.type == "private" && otherUser != null) {
+                            Image(
+                                painter = rememberAsyncImagePainter(model = otherUser?.profileImageURL),
+                                contentDescription = "Foto de Perfil",
+                                modifier = imageModifier,
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Image(
+                                imageVector = Icons.Default.Group,
+                                contentDescription = "Ícone do Grupo",
+                                modifier = imageModifier.padding(4.dp),
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = chatTitle,

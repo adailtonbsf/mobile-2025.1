@@ -101,11 +101,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private val chatViewModel: ChatViewModel by viewModels {
-        ChatViewModelFactory(ChatRepository(), AuthRepository())
+        ChatViewModelFactory(ChatRepository(), AuthRepository(), userPreferences)
     }
 
     private val caronaViewModel: CaronaViewModel by viewModels {
-        CaronaViewModelFactory(CaronaRepository(), AuthRepository(), ChatRepository())
+        CaronaViewModelFactory(CaronaRepository(), AuthRepository(), ChatRepository(), userPreferences, application)
     }
 
     @ExperimentalAnimationApi
@@ -351,7 +351,8 @@ class MainActivity : ComponentActivity() {
                                             caronaId = caronaId,
                                             navController = navController,
                                             caronaViewModel = caronaViewModel,
-                                            authViewModel = authViewModel
+                                            authViewModel = authViewModel,
+                                            chatViewModel = chatViewModel
                                         )
                                     }
                                 }

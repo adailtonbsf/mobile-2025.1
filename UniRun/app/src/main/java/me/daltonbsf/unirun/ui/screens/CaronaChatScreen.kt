@@ -45,7 +45,8 @@ fun CaronaChatScreen(
                     Row {
                         ChatCard(
                             chat = chat,
-                            chatViewModel = chatViewModel
+                            chatViewModel = chatViewModel,
+                            authViewModel = authViewModel
                         )
                     }
                 }

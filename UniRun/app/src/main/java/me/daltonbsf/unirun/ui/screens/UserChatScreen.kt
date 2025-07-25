@@ -132,7 +132,7 @@ fun UserChatScreen(
                                 }
                             )
                     ) {
-                        ChatCard(chat, chatViewModel)
+                        ChatCard(chat, chatViewModel, authViewModel)
                     }
                 }
 

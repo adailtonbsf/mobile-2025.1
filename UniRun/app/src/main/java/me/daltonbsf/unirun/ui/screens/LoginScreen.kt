@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -58,6 +59,54 @@ import me.daltonbsf.unirun.viewmodel.AuthViewModel
 fun LoginScreen(navController: NavController, authViewModel: AuthViewModel, onThemeToggle: () -> Unit, isDarkTheme: Boolean) {
     var isLoading by remember { mutableStateOf(false) }
     var showEmailNotVerifiedDialog by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var showResetPasswordDialog by remember { mutableStateOf(false) }
+    var resetEmail by remember { mutableStateOf("") }
+
+    if (showResetPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetPasswordDialog = false },
+            title = { Text("Recuperar Senha") },
+            text = {
+                Column {
+                    Text("Digite seu e-mail para enviarmos as instruções de recuperação.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = { resetEmail = it },
+                        label = { Text("E-mail") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        authViewModel.resetPassword(resetEmail) { success ->
+                            if (success) {
+                                Toast.makeText(context, "E-mail de recuperação enviado!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Falha ao enviar e-mail.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        showResetPasswordDialog = false
+                        resetEmail = ""
+                    }
+                ) {
+                    Text("Enviar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetPasswordDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -67,9 +116,6 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel, onTh
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            var email by remember { mutableStateOf("") }
-            var password by remember { mutableStateOf("") }
-            var passwordVisible by remember { mutableStateOf(false) }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -194,6 +240,9 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel, onTh
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                TextButton(onClick = { showResetPasswordDialog = true }) {
+                    Text("Esqueci minha senha")
+                }
                 TextButton(onClick = { navController.navigate("registration") }) {
                     Text(
                         text = "Não tem uma conta? Registre-se",
