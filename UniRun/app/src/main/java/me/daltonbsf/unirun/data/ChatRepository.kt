@@ -24,7 +24,7 @@ class ChatRepository {
                 }
                 val chats = snapshots?.map { document ->
                     val chat = document.toObject(Chat::class.java)
-                    chat.copy(id = document.id) // Mapeia o ID do documento
+                    chat.copy(id = document.id)
                 } ?: emptyList()
                 trySend(chats).isSuccess
             }

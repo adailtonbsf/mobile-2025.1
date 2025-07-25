@@ -105,7 +105,7 @@ fun OfferCaronaScreen(navController: NavController, caronaViewModel: CaronaViewM
 
     var showDetailsDialog by remember { mutableStateOf(false) }
 
-    // --- Lógica de Permissão de Localização ---
+
     val locationPermissions = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION
@@ -131,7 +131,6 @@ fun OfferCaronaScreen(navController: NavController, caronaViewModel: CaronaViewM
             locationPermissionLauncher.launch(locationPermissions)
         }
     }
-    // --- Fim da Lógica de Permissão ---
 
     val UFC = LatLng(-4.979089750971326, -39.056514252078195)
     val cameraPositionState = rememberCameraPositionState {
@@ -168,7 +167,6 @@ fun OfferCaronaScreen(navController: NavController, caronaViewModel: CaronaViewM
         }
     }
 
-    // Move a câmera para a localização do usuário quando a permissão for concedida
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
@@ -180,7 +178,7 @@ fun OfferCaronaScreen(navController: NavController, caronaViewModel: CaronaViewM
                     }
                 }
             } catch (e: SecurityException) {
-                // Exceção de segurança se a permissão não for concedida
+                Log.e("OfferCaronaScreen", "Erro ao obter localização: ${e.message}")
             }
         }
     }
@@ -225,7 +223,7 @@ fun OfferCaronaScreen(navController: NavController, caronaViewModel: CaronaViewM
                                 intent,
                                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                             )
-                            val reminderTimeMillis = selectedDateTimeMillis - 60 * 60 * 1000 // 1h antes
+                            val reminderTimeMillis = selectedDateTimeMillis - 60 * 60 * 1000
 
                             alarmManager.setExactAndAllowWhileIdle(
                                 AlarmManager.RTC_WAKEUP,
@@ -296,7 +294,7 @@ fun OfferCaronaScreen(navController: NavController, caronaViewModel: CaronaViewM
                         when (activeField) {
                             LocationField.START -> startSelectedLocation = latLng
                             LocationField.DESTINATION -> destSelectedLocation = latLng
-                            null -> {} // Não faz nada se nenhum campo estiver focado
+                            null -> {}
                         }
                     }
                 ) {

@@ -68,11 +68,11 @@ fun UserChatScreen(
     LaunchedEffect(searchText) {
         if (searchText.length > 2) {
             isLoading = true
-            delay(500) // Debounce para evitar buscas a cada tecla digitada
+            delay(500)
             authViewModel.searchUsers(searchText)
             isLoading = false
         } else {
-            authViewModel.searchUsers("") // Limpa os resultados se a busca for curta
+            authViewModel.searchUsers("")
         }
     }
 
@@ -132,7 +132,7 @@ fun UserChatScreen(
                                 }
                             )
                     ) {
-                        ChatCard(chat, authViewModel, chatViewModel)
+                        ChatCard(chat, chatViewModel)
                     }
                 }
 

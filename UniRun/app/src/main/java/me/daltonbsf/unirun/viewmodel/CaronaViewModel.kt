@@ -1,21 +1,29 @@
 package me.daltonbsf.unirun.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.app.Application
+import androidx.annotation.RequiresPermission
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import me.daltonbsf.unirun.data.AuthRepository
 import me.daltonbsf.unirun.data.CaronaRepository
 import me.daltonbsf.unirun.data.ChatRepository
+import me.daltonbsf.unirun.data.UserPreferences
 import me.daltonbsf.unirun.model.Carona
+import me.daltonbsf.unirun.util.NotificationUtils
 
 class CaronaViewModel(
     private val caronaRepository: CaronaRepository,
     private val authRepository: AuthRepository,
-    private val chatRepository: ChatRepository
-) : ViewModel() {
+    private val chatRepository: ChatRepository,
+    private val userPreferences: UserPreferences,
+    application: Application
+) : AndroidViewModel(application) {
 
     private val _caronaCreationStatus = MutableStateFlow<Boolean?>(null)
     val caronaCreationStatus = _caronaCreationStatus.asStateFlow()
@@ -32,6 +40,8 @@ class CaronaViewModel(
 
     fun loadAvailableCaronas() {
         viewModelScope.launch {
+            caronaRepository.finishPastCaronas()
+
             val allCaronas = caronaRepository.getAllCaronas()
             val currentUser = authRepository.getCurrentUser()?.uid
             if (currentUser != null) {
@@ -48,19 +58,25 @@ class CaronaViewModel(
         }
     }
 
+    @RequiresPermission(POST_NOTIFICATIONS)
     fun joinCarona(carona: Carona, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val userId = authRepository.getCurrentUser()?.uid
-            if (userId == null) {
+            val user = authRepository.getCurrentUser()
+            val userName = authRepository.getUserName()
+            if (user == null || userName == null) {
                 onResult(false)
                 return@launch
             }
 
-            val joinedCarona = caronaRepository.joinCarona(carona.id, userId)
+            val joinedCarona = caronaRepository.joinCarona(carona.id, user.uid)
             if (joinedCarona) {
-                val addedToChat = chatRepository.addUserToGroupChat(carona.chatId, userId)
+                val addedToChat = chatRepository.addUserToGroupChat(carona.chatId, user.uid)
                 if (addedToChat) {
-                    loadCaronaDetails(carona.id) // Recarrega os dados para atualizar a UI
+                    loadCaronaDetails(carona.id)
+                    sendNotificationIfEnabled(
+                        title = "Novo participante!",
+                        message = "$userName entrou na carona para ${carona.destinyName}."
+                    )
                 }
                 onResult(addedToChat)
             } else {
@@ -118,17 +134,25 @@ class CaronaViewModel(
         }
     }
 
+    @RequiresPermission(POST_NOTIFICATIONS)
     fun leaveCarona(carona: Carona, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val userId = authRepository.getCurrentUser()?.uid
-            if (userId == null) {
+            val user = authRepository.getCurrentUser()
+            val userName = authRepository.getUserName()
+            if (user == null || userName == null) {
                 onResult(false)
                 return@launch
             }
 
-            val leftCarona = caronaRepository.leaveCarona(carona.id, userId)
+            val leftCarona = caronaRepository.leaveCarona(carona.id, user.uid)
             if (leftCarona) {
-                val removedFromChat = chatRepository.removeUserFromGroupChat(carona.chatId, userId)
+                val removedFromChat = chatRepository.removeUserFromGroupChat(carona.chatId, user.uid)
+                if(removedFromChat) {
+                    sendNotificationIfEnabled(
+                        title = "Um participante saiu!",
+                        message = "$userName saiu da carona para ${carona.destinyName}."
+                    )
+                }
                 onResult(removedFromChat)
             } else {
                 onResult(false)
@@ -136,11 +160,29 @@ class CaronaViewModel(
         }
     }
 
+    @RequiresPermission(POST_NOTIFICATIONS)
     fun cancelCarona(carona: Carona, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val chatDeleted = chatRepository.deleteChat(carona.chatId)
             val caronaCancelled = caronaRepository.cancelCarona(carona.id)
-            onResult(chatDeleted && caronaCancelled)
+            val success = chatDeleted && caronaCancelled
+            if (success) {
+                sendNotificationIfEnabled(
+                    title = "Carona Cancelada",
+                    message = "A carona de ${carona.originName} para ${carona.destinyName} foi cancelada."
+                )
+            }
+            onResult(success)
+        }
+    }
+
+    @RequiresPermission(POST_NOTIFICATIONS)
+    private suspend fun sendNotificationIfEnabled(title: String, message: String) {
+        val allNotificationsEnabled = userPreferences.getPreference(UserPreferences.ALL_NOTIFICATIONS_KEY, "true").first().toBoolean()
+        val groupNotificationsEnabled = userPreferences.getPreference(UserPreferences.GROUP_ENTRY_EXIT_NOTIFICATIONS_KEY, "true").first().toBoolean()
+
+        if (allNotificationsEnabled && groupNotificationsEnabled) {
+            NotificationUtils.showNotification(getApplication(), title, message)
         }
     }
 }

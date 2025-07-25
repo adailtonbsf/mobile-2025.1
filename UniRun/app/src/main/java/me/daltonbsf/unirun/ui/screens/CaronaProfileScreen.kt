@@ -1,5 +1,7 @@
 package me.daltonbsf.unirun.ui.screens
 
+import android.Manifest.permission.POST_NOTIFICATIONS
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,6 +47,7 @@ import me.daltonbsf.unirun.ui.components.UserDetailsCard
 import me.daltonbsf.unirun.viewmodel.AuthViewModel
 import me.daltonbsf.unirun.viewmodel.CaronaViewModel
 
+@RequiresPermission(POST_NOTIFICATIONS)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaronaProfileScreen(

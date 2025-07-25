@@ -2,7 +2,6 @@ package me.daltonbsf.unirun
 
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -45,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -67,7 +67,6 @@ import me.daltonbsf.unirun.data.AuthRepository
 import me.daltonbsf.unirun.data.CaronaRepository
 import me.daltonbsf.unirun.data.ChatRepository
 import me.daltonbsf.unirun.data.UserPreferences
-//import me.daltonbsf.unirun.model.caronaChatList
 import me.daltonbsf.unirun.ui.components.BottomNavigationBar
 import me.daltonbsf.unirun.ui.components.TopBar
 import me.daltonbsf.unirun.ui.screens.AboutScreen
@@ -75,9 +74,6 @@ import me.daltonbsf.unirun.ui.screens.AccountSettingsScreen
 import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
 import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
 import me.daltonbsf.unirun.ui.screens.CaronaProfileScreen
-//import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
-//import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
-//import me.daltonbsf.unirun.ui.screens.CaronaProfileScreen
 import me.daltonbsf.unirun.ui.screens.CaronaScreen
 import me.daltonbsf.unirun.ui.screens.ChatScreen
 import me.daltonbsf.unirun.ui.screens.ConfigScreen
@@ -119,7 +115,7 @@ class MainActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        userPreferences = UserPreferences.getInstance(applicationContext) // Inicialize aqui
+        userPreferences = UserPreferences.getInstance(applicationContext)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(POST_NOTIFICATIONS), 1001)
         }
@@ -141,6 +137,11 @@ class MainActivity : ComponentActivity() {
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
             val currentUser by authViewModel.user.collectAsState()
+            LaunchedEffect(authViewModel.isUserLoggedIn()) {
+                if (authViewModel.isUserLoggedIn()) {
+                    chatViewModel.loadUserChats(applicationContext)
+                }
+            }
             UniRunTheme(darkTheme = isDarkTheme.toBoolean()) {
                 val withoutTopBottomBar = listOf(
                     "peopleChat/{chatId}",

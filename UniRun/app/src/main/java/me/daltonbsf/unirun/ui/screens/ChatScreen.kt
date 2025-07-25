@@ -47,13 +47,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import me.daltonbsf.unirun.R
 import me.daltonbsf.unirun.model.Carona
 import me.daltonbsf.unirun.model.Message
-import me.daltonbsf.unirun.model.getName
 import me.daltonbsf.unirun.viewmodel.AuthViewModel
 import me.daltonbsf.unirun.viewmodel.CaronaViewModel
 import me.daltonbsf.unirun.viewmodel.ChatViewModel

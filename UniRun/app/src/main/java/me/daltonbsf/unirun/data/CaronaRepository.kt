@@ -15,15 +15,11 @@ class CaronaRepository() {
 
     suspend fun createCarona(carona: Carona): Boolean {
         return try {
-            // Cria uma referência de documento com um ID gerado automaticamente
             val newCaronaRef = caronasCollection.document()
-            // Atribui o ID gerado ao objeto carona
             carona.id = newCaronaRef.id
 
-            // Salva a carona no Firestore
             newCaronaRef.set(carona).await()
 
-            // Atualiza a contagem de caronas oferecidas pelo usuário
             val userId = auth.currentUser?.uid
             if (userId != null) {
                 val userDocRef = firestore.collection("users").document(userId)
@@ -39,6 +35,7 @@ class CaronaRepository() {
     suspend fun getAllCaronas(): List<Carona> {
         return try {
             val snapshot = caronasCollection
+                .whereEqualTo("status", "active")
                 .orderBy("departureDate", Query.Direction.ASCENDING)
                 .get()
                 .await()
@@ -135,6 +132,34 @@ class CaronaRepository() {
         } catch (e: Exception) {
             Log.e("CaronaRepository", "Erro ao cancelar carona", e)
             false
+        }
+    }
+
+    suspend fun finishPastCaronas() {
+        try {
+            val now = System.currentTimeMillis().toString()
+            val snapshot = caronasCollection
+                .whereEqualTo("status", "active")
+                .whereLessThan("departureDate", now)
+                .get()
+                .await()
+
+            val batch = firestore.batch()
+            for (document in snapshot.documents) {
+                val caronaRef = document.reference
+                batch.update(caronaRef, "status", "finished")
+
+                val participants = document.get("participants") as? List<*>
+                participants?.forEach { userId ->
+                    if (userId is String) {
+                        val userRef = firestore.collection("users").document(userId)
+                        batch.update(userRef, "requestedRidesCount", FieldValue.increment(1))
+                    }
+                }
+            }
+            batch.commit().await()
+        } catch (e: Exception) {
+            Log.e("CaronaRepository", "Erro ao finalizar caronas passadas", e)
         }
     }
 }

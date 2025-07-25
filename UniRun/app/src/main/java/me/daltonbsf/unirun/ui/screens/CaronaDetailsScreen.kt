@@ -1,9 +1,10 @@
 package me.daltonbsf.unirun.ui.screens
 
+import android.Manifest.permission.POST_NOTIFICATIONS
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,6 +62,7 @@ fun VerticalDivider(modifier: Modifier = Modifier, color: Color = MaterialTheme.
     )
 }
 
+@RequiresPermission(POST_NOTIFICATIONS)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaronaDetailsScreen(
@@ -112,7 +114,6 @@ fun CaronaDetailsScreen(
                                 if (success) {
                                     navController.navigate("caronaChat/${carona.chatId}")
                                 }
-                                // Opcional: Adicionar um else para mostrar uma mensagem de erro
                             }
                         }
                     },
@@ -120,7 +121,7 @@ fun CaronaDetailsScreen(
                         .padding(16.dp)
                         .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    enabled = carona.seatsAvailable > 0 || isUserInCarona // Desabilita se não houver vagas e o usuário não estiver na carona
+                    enabled = carona.seatsAvailable > 0 || isUserInCarona
                 ) {
                     Text(
                         text = if (isUserInCarona) "ABRIR CHAT DA CARONA" else "ENTRAR NA CARONA",

@@ -27,7 +27,6 @@ fun CaronaChatScreen(
     val chatList by chatViewModel.chatList.collectAsState()
     val currentUser by authViewModel.user.collectAsState()
 
-    // Filtra os chats para incluir apenas os de grupo em que o usuário atual é participante.
     val caronaChats = currentUser?.let { user ->
         chatList.filter { it.type == "group" && it.participants.contains(user.uid) }
     } ?: emptyList()
@@ -46,7 +45,6 @@ fun CaronaChatScreen(
                     Row {
                         ChatCard(
                             chat = chat,
-                            authViewModel = authViewModel,
                             chatViewModel = chatViewModel
                         )
                     }
