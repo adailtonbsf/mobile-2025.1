@@ -2,6 +2,7 @@ package me.daltonbsf.unirun.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,9 +51,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import me.daltonbsf.unirun.R
+import me.daltonbsf.unirun.model.Carona
 import me.daltonbsf.unirun.model.Message
 import me.daltonbsf.unirun.model.getName
 import me.daltonbsf.unirun.viewmodel.AuthViewModel
+import me.daltonbsf.unirun.viewmodel.CaronaViewModel
 import me.daltonbsf.unirun.viewmodel.ChatViewModel
 import java.time.Instant
 import java.time.LocalDateTime
@@ -65,7 +68,8 @@ fun ChatScreen(
     chatId: String,
     navController: NavController,
     chatViewModel: ChatViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    caronaViewModel: CaronaViewModel
 ) {
     var messageText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
@@ -80,10 +84,16 @@ fun ChatScreen(
     }
 
     var chatTitle by remember { mutableStateOf("") }
+    var carona by remember { mutableStateOf<Carona?>(null) }
 
     LaunchedEffect(chat) {
         if (chat != null) {
             chatTitle = chatViewModel.getChatTitle(chat)
+            if (chat.type == "group") {
+                caronaViewModel.findCaronaByChatId(chat.id) { result ->
+                    carona = result
+                }
+            }
         }
     }
 
@@ -93,7 +103,6 @@ fun ChatScreen(
 
     LaunchedEffect(messages) {
         if (messages.isNotEmpty()) {
-            // Rola para o item mais recente (no topo da lista invertida)
             listState.animateScrollToItem(0)
         }
     }
@@ -102,10 +111,19 @@ fun ChatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = if (chat?.type == "group" && carona != null) {
+                            Modifier.clickable {
+                                navController.navigate("caronaProfile/${carona!!.id}")
+                            }
+                        } else {
+                            Modifier
+                        }
+                    ) {
                         Image(
-                            painter = painterResource(R.drawable.placeholder),
-                            contentDescription = "Profile Image",
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                            contentDescription = "Chat Icon",
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape),
@@ -115,13 +133,16 @@ fun ChatScreen(
                         Text(
                             text = chatTitle,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -130,30 +151,8 @@ fun ChatScreen(
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            LazyColumn(
-                state = listState,
-                reverseLayout = true, // Adicionado para layout de baixo para cima
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
-                    .padding(bottom = 8.dp)
-            ) {
-                items(messages) { message ->
-                    MessageBubble(
-                        message = message,
-                        isFromCurrentUser = message.senderId == currentUser?.uid,
-                        isGroupChat = chat?.type == "group"
-                    )
-                }
-            }
-
+        },
+        bottomBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,10 +162,11 @@ fun ChatScreen(
                 OutlinedTextField(
                     value = messageText,
                     onValueChange = { messageText = it },
-                    label = { Text("Digite uma mensagem") },
                     modifier = Modifier.weight(1f),
-                    maxLines = 4
+                    placeholder = { Text("Digite uma mensagem...") },
+                    shape = RoundedCornerShape(24.dp)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = {
                     if (messageText.isNotBlank()) {
                         coroutineScope.launch {
@@ -175,7 +175,33 @@ fun ChatScreen(
                         }
                     }
                 }) {
-                    Icon(Icons.AutoMirrored.Filled.Send, "Enviar mensagem")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Enviar",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+                reverseLayout = true,
+                state = listState
+            ) {
+                items(messages) { message ->
+                    MessageBubble(
+                        message = message,
+                        isFromCurrentUser = message.senderId == currentUser?.uid,
+                        isGroupChat = chat?.type == "group"
+                    )
                 }
             }
         }
@@ -196,44 +222,46 @@ fun MessageBubble(message: Message, isFromCurrentUser: Boolean, isGroupChat: Boo
         verticalAlignment = Alignment.Bottom
     ) {
         if (!isFromCurrentUser) {
-            Image(
-                painter = painterResource(id = R.drawable.placeholder),
-                contentDescription = "Sender Image",
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .padding(end = 4.dp),
-                contentScale = ContentScale.Crop
-            )
+            Spacer(modifier = Modifier.width(40.dp))
         }
 
         Surface(
-            shape = RoundedCornerShape(8.dp),
-            tonalElevation = 1.dp,
-            modifier = Modifier.widthIn(max = screenWidth * 0.8f),
-            color = if (isFromCurrentUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+            shape = RoundedCornerShape(16.dp),
+            color = if (isFromCurrentUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+            modifier = Modifier.widthIn(max = screenWidth * 0.8f)
         ) {
-            Column(modifier = Modifier.padding(8.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 if (isGroupChat && !isFromCurrentUser) {
                     Text(
                         text = message.senderName,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                        ),
-                        modifier = Modifier.padding(bottom = 2.dp)
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
-                Text(text = message.content)
                 Text(
-                    text = LocalDateTime.ofInstant(
-                        Instant.ofEpochMilli(message.timestamp),
-                        ZoneId.systemDefault()
-                    ).format(DateTimeFormatter.ofPattern("HH:mm")),
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                    modifier = Modifier.align(Alignment.End)
+                    text = message.content,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = formatTimestamp(message.timestamp),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 4.dp)
                 )
             }
         }
+    }
+}
+
+private fun formatTimestamp(timestamp: Long): String {
+    val messageDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
+    val now = LocalDateTime.now()
+
+    return if (messageDateTime.toLocalDate() == now.toLocalDate()) {
+        messageDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+    } else {
+        messageDateTime.format(DateTimeFormatter.ofPattern("dd/MM HH:mm"))
     }
 }

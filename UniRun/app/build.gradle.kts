@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 val localProperties = Properties()
@@ -15,13 +16,29 @@ if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
 
+secrets {
+    // Optionally specify a different file name containing your secrets.
+    // The plugin defaults to "local.properties"
+    propertiesFileName = "secrets.properties"
+
+    // A properties file containing default secret values. This file can be
+    // checked in version control.
+    defaultPropertiesFileName = "local.defaults.properties"
+
+    // Configure which keys should be ignored by the plugin by providing regular expressions.
+    // "sdk.dir" is ignored by default.
+    ignoreList.add("keyToIgnore") // Ignore the key "keyToIgnore"
+    ignoreList.add("sdk.*")       // Ignore all keys matching the regexp "sdk.*"
+}
+
+
 android {
     namespace = "me.daltonbsf.unirun"
     compileSdk = 35
 
     defaultConfig {
         applicationId = "me.daltonbsf.unirun"
-        minSdk = 34
+        minSdk = 28
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -29,6 +46,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SUPA_BASE_URL", "\"${localProperties.getProperty("SUPA_BASE_URL")}\"")
         buildConfigField("String", "SUPA_API_KEY", "\"${localProperties.getProperty("SUPA_API_KEY")}\"")
+        manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY", "")
     }
 
     buildTypes {
@@ -54,6 +72,11 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.libraries.places:places:3.5.0")
+    implementation( "com.google.maps.android:maps-compose:2.11.4" )
+    implementation( "com.google.android.gms:play-services-maps:18.2.0" )
+    implementation( "com.google.android.gms:play-services-location:21.1.0" )
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     implementation(platform("io.github.jan-tennert.supabase:bom:2.2.0"))

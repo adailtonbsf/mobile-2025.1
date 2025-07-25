@@ -1,14 +1,19 @@
 package me.daltonbsf.unirun.ui.screens
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -18,6 +23,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,12 +40,41 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import me.daltonbsf.unirun.R
-//import me.daltonbsf.unirun.model.userList
+import me.daltonbsf.unirun.model.User
 import me.daltonbsf.unirun.ui.components.UserDetailsCard
+import me.daltonbsf.unirun.viewmodel.AuthViewModel
+import me.daltonbsf.unirun.viewmodel.CaronaViewModel
 
-/*@ExperimentalMaterial3Api TODO: Implementar o CaronaChatRepository
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CaronaProfileScreen(caronaChat: CaronaChat, navController: NavController) {
+fun CaronaProfileScreen(
+    caronaId: String,
+    navController: NavController,
+    caronaViewModel: CaronaViewModel,
+    authViewModel: AuthViewModel
+) {
+    val carona by caronaViewModel.selectedCarona.collectAsState()
+    var creator by remember { mutableStateOf<User?>(null) }
+    var participants by remember { mutableStateOf<List<User>>(emptyList()) }
+    val currentUser by authViewModel.user.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    var initialLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(caronaId) {
+        caronaViewModel.loadCaronaDetails(caronaId)
+    }
+
+    LaunchedEffect(carona) {
+        carona?.let {
+            creator = authViewModel.getUserData(it.creator)
+            val participantUsers = it.participants.mapNotNull { participantId ->
+                authViewModel.getUserData(participantId)
+            }
+            participants = participantUsers
+            initialLoading = false
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,68 +96,101 @@ fun CaronaProfileScreen(caronaChat: CaronaChat, navController: NavController) {
             )
         },
         bottomBar = {
-            Button(
-                onClick = { },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = MaterialTheme.shapes.large,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text(
-                    text = "Sair da carona",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onError
-                )
+            carona?.let { currentCarona ->
+                currentUser?.let { user ->
+                    val isCreator = user.uid == currentCarona.creator
+                    Button(
+                        onClick = {
+                            isLoading = true
+                            if (isCreator) {
+                                caronaViewModel.cancelCarona(currentCarona) { success ->
+                                    if (success) {
+                                        navController.popBackStack("chats/carona", inclusive = true)
+                                    }
+                                    isLoading = false
+                                }
+                            } else {
+                                caronaViewModel.leaveCarona(currentCarona) { success ->
+                                    if (success) {
+                                        navController.popBackStack("chats/carona", inclusive = true)
+                                    }
+                                    isLoading = false
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        ),
+                        enabled = !isLoading
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                        } else {
+                            Text(if (isCreator) "Cancelar carona" else "Sair da carona")
+                        }
+                    }
+                }
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxWidth()
-                .padding(16.dp),
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    caronaChat.getName(),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(16.dp),
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                val getRider = userList.find { it.name == caronaChat.creator }
-                AsyncImage(
-                    model = getRider?.profileImageURL,
-                    contentDescription = "Rider Profile Image",
-                    modifier = Modifier
-                        .size(128.dp)
-                        .clip(CircleShape),
-                    error = painterResource(id = R.drawable.error)
-                )
-                Text(
-                    "Motorista: ${caronaChat.creator}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(8.dp),
-                    textAlign = TextAlign.Center
-                )
+        if (initialLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
-            Text(
-                "Caronas",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-            caronaChat.participants.forEach { participant ->
-                val user = userList.find { it.name == participant.name }
-                if (user != null) {
-                    UserDetailsCard(user, navController)
+        } else {
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+            ) {
+                carona?.let {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "${it.originName} ➜ ${it.destinyName}",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(16.dp),
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        creator?.let { creatorUser ->
+                            AsyncImage(
+                                model = creatorUser.profileImageURL,
+                                contentDescription = "Rider Profile Image",
+                                modifier = Modifier
+                                    .size(128.dp)
+                                    .clip(CircleShape),
+                                error = painterResource(id = R.drawable.error)
+                            )
+                            Text(
+                                "Motorista: ${creatorUser.name}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(8.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    Text(
+                        "Participantes (${participants.size})",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                    LazyColumn {
+                        items(participants) { user ->
+                            UserDetailsCard(user, navController)
+                        }
+                    }
                 }
             }
         }
     }
-}*/
+}

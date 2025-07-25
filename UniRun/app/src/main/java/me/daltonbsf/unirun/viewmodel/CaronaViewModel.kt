@@ -23,6 +23,9 @@ class CaronaViewModel(
     private val _availableCaronas = MutableStateFlow<List<Carona>>(emptyList())
     val availableCaronas = _availableCaronas.asStateFlow()
 
+    private val _selectedCarona = MutableStateFlow<Carona?>(null)
+    val selectedCarona = _selectedCarona.asStateFlow()
+
     init {
         loadAvailableCaronas()
     }
@@ -35,6 +38,33 @@ class CaronaViewModel(
                 _availableCaronas.value = allCaronas.filter { it.creator != currentUser }
             } else {
                 _availableCaronas.value = allCaronas
+            }
+        }
+    }
+
+    fun loadCaronaDetails(caronaId: String) {
+        viewModelScope.launch {
+            _selectedCarona.value = caronaRepository.getCaronaById(caronaId)
+        }
+    }
+
+    fun joinCarona(carona: Carona, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val userId = authRepository.getCurrentUser()?.uid
+            if (userId == null) {
+                onResult(false)
+                return@launch
+            }
+
+            val joinedCarona = caronaRepository.joinCarona(carona.id, userId)
+            if (joinedCarona) {
+                val addedToChat = chatRepository.addUserToGroupChat(carona.chatId, userId)
+                if (addedToChat) {
+                    loadCaronaDetails(carona.id) // Recarrega os dados para atualizar a UI
+                }
+                onResult(addedToChat)
+            } else {
+                onResult(false)
             }
         }
     }
@@ -55,8 +85,9 @@ class CaronaViewModel(
                 return@launch
             }
 
+            val participants = listOf(creatorId)
             val groupName = "$startLocationName ➜ $destLocationName"
-            val chatId = chatRepository.createGroupChatRoom(groupName, listOf(creatorId))
+            val chatId = chatRepository.createGroupChatRoom(groupName, participants)
 
             val newCarona = Carona(
                 creator = creatorId,
@@ -67,7 +98,8 @@ class CaronaViewModel(
                 destiny = "${destLocation.latitude},${destLocation.longitude}",
                 originName = startLocationName,
                 destinyName = destLocationName,
-                seatsAvailable = seats
+                seatsAvailable = seats,
+                participants = participants
             )
 
             val success = caronaRepository.createCarona(newCarona)
@@ -77,5 +109,38 @@ class CaronaViewModel(
 
     fun resetCreationStatus() {
         _caronaCreationStatus.value = null
+    }
+
+    fun findCaronaByChatId(chatId: String, onResult: (Carona?) -> Unit) {
+        viewModelScope.launch {
+            val carona = caronaRepository.getCaronaByChatId(chatId)
+            onResult(carona)
+        }
+    }
+
+    fun leaveCarona(carona: Carona, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val userId = authRepository.getCurrentUser()?.uid
+            if (userId == null) {
+                onResult(false)
+                return@launch
+            }
+
+            val leftCarona = caronaRepository.leaveCarona(carona.id, userId)
+            if (leftCarona) {
+                val removedFromChat = chatRepository.removeUserFromGroupChat(carona.chatId, userId)
+                onResult(removedFromChat)
+            } else {
+                onResult(false)
+            }
+        }
+    }
+
+    fun cancelCarona(carona: Carona, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val chatDeleted = chatRepository.deleteChat(carona.chatId)
+            val caronaCancelled = caronaRepository.cancelCarona(carona.id)
+            onResult(chatDeleted && caronaCancelled)
+        }
     }
 }

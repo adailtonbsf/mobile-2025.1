@@ -10,7 +10,6 @@ import me.daltonbsf.unirun.data.AuthRepository
 import me.daltonbsf.unirun.data.LoginStatus
 import me.daltonbsf.unirun.data.UserPreferences
 import me.daltonbsf.unirun.model.User
-import java.time.LocalDate
 
 class AuthViewModel(
     private val repository: AuthRepository,
