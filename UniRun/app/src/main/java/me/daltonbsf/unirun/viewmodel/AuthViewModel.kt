@@ -10,30 +10,26 @@ import me.daltonbsf.unirun.data.AuthRepository
 import me.daltonbsf.unirun.data.LoginStatus
 import me.daltonbsf.unirun.data.UserPreferences
 import me.daltonbsf.unirun.model.User
-import java.time.LocalDate
 
 class AuthViewModel(
     private val repository: AuthRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
-    var loginResult: ((Boolean) -> Unit)? = null
-    var registerResult: ((Boolean) -> Unit)? = null
+    private val _searchResults = MutableStateFlow<List<User>>(emptyList())
+    val searchResults = _searchResults.asStateFlow()
 
     private val _user = MutableStateFlow<User?>(null)
     val user = _user.asStateFlow()
 
     init {
         viewModelScope.launch {
-            // Tenta carregar o usuário do cache primeiro
             _user.value = userPreferences.getUser().firstOrNull()
-            // Se logado, busca dados atualizados da rede em segundo plano
             if (isUserLoggedIn()) {
                 loadCurrentUser()
             }
         }
     }
 
-    // Função para buscar dados da rede e atualizar o cache
     private suspend fun updateAndCacheUser() {
         val firebaseUser = repository.getCurrentUser()
         if (firebaseUser != null) {
@@ -50,7 +46,7 @@ class AuthViewModel(
                 requestedRidesCount = repository.getUserRequestedRidesCount()
             )
             _user.value = userModel
-            userPreferences.saveUser(userModel) // Salva no DataStore
+            userPreferences.saveUser(userModel)
         }
     }
 
@@ -64,7 +60,6 @@ class AuthViewModel(
         viewModelScope.launch {
             val status = repository.login(email, password)
             if (status == LoginStatus.SUCCESS) {
-                // Atualiza o usuário e o cache após o login
                 updateAndCacheUser()
             }
             onResult(status)
@@ -148,7 +143,7 @@ class AuthViewModel(
     fun logout() {
         viewModelScope.launch {
             repository.logout()
-            userPreferences.clearUser() // Limpa o cache no logout
+            userPreferences.clearUser()
             _user.value = null
         }
     }
@@ -192,5 +187,19 @@ class AuthViewModel(
             loadCurrentUser()
         }
         return success
+    }
+
+    fun searchUsers(query: String) {
+        viewModelScope.launch {
+            if (query.length > 2) {
+                _searchResults.value = repository.searchUsers(query)
+            } else {
+                _searchResults.value = emptyList()
+            }
+        }
+    }
+
+    suspend fun getUserData(userId: String): User? {
+        return repository.getUserData(userId)
     }
 }

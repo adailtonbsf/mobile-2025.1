@@ -3,11 +3,12 @@ package me.daltonbsf.unirun.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MarkUnreadChatAlt
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,96 +25,90 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import kotlinx.coroutines.delay
 import me.daltonbsf.unirun.R
-import me.daltonbsf.unirun.model.CaronaChat
-import me.daltonbsf.unirun.model.ChatInterface
-import me.daltonbsf.unirun.model.UserChat
+import me.daltonbsf.unirun.model.Chat
+import me.daltonbsf.unirun.viewmodel.ChatViewModel
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 @Composable
-fun ChatCard(chat: ChatInterface) {
+fun ChatCard(chat: Chat, chatViewModel: ChatViewModel) {
     var now by remember { mutableStateOf(LocalDateTime.now()) }
 
     LaunchedEffect(Unit) {
         while (true) {
             now = LocalDateTime.now()
-            delay(60000)
+            kotlinx.coroutines.delay(60000)
         }
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = chat.profileImageURL,
+        Image(
+            painter = painterResource(id = R.drawable.placeholder),
             contentDescription = "Profile Image",
-            placeholder = painterResource(R.drawable.placeholder),
-            error = painterResource(R.drawable.error),
-            modifier = Modifier
-                .size(64.dp)
+            modifier = Modifier.size(56.dp)
         )
 
-        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
-            val lastMessage = chat.getLastMessage()
-            Row {
-                var title = ""
-                when (chat) {
-                    is UserChat -> {
-                        title = chat.getName()
-                    }
-                    is CaronaChat -> {
-                        title = chat.groupName
-                    }
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            val lastMessage = chat.lastMessage
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                var title by remember { mutableStateOf("") }
+
+                LaunchedEffect(chat) {
+                    title = chatViewModel.getChatTitle(chat)
                 }
+
                 Text(
-                    title,
-                    style = MaterialTheme.typography.titleLarge,
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if(chat.unread.value) {
-                    Image(
-                        imageVector = Icons.Default.MarkUnreadChatAlt,
-                        contentDescription = "Unread Message",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(4.dp)
-                    )
-                }
-                lastMessage?.date?.let {
-                    val duration = Duration.between(it, now)
-                    Text(
-                        text = when {
-                            duration.toDays() > 0 -> "${duration.toDays()}d atrás"
-                            duration.toHours() > 0 -> "${duration.toHours()}h atrás"
-                            duration.toMinutes() > 0 -> "${duration.toMinutes()}m atrás"
-                            else -> "agora mesmo"
-                        }
-                    )
-                }
-            }
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = lastMessage?.content ?: "Nenhuma mensagem ainda",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                if (chat is UserChat && chat.isPinned.value) {
+                if (chat.isPinned.value) {
                     Image(
                         imageVector = Icons.Default.PushPin,
                         contentDescription = "Conversa fixada",
                         modifier = Modifier
-                            .size(20.dp),
+                            .size(16.dp)
+                            .padding(start = 4.dp),
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                     )
                 }
+            }
+            Text(
+                text = lastMessage?.content ?: "Nenhuma mensagem ainda",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column(horizontalAlignment = Alignment.End) {
+            chat.lastMessage?.timestamp?.let { timestamp ->
+                val messageDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
+                val duration = Duration.between(messageDateTime, now)
+                Text(
+                    text = when {
+                        duration.toDays() > 0 -> "${duration.toDays()}d"
+                        duration.toHours() > 0 -> "${duration.toHours()}h"
+                        duration.toMinutes() > 0 -> "${duration.toMinutes()}m"
+                        else -> "agora"
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

@@ -61,7 +61,6 @@ fun ProfileScreen(user: User) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Biografia
         Text(
             text = "Biografia",
             style = MaterialTheme.typography.titleMedium,
@@ -83,7 +82,6 @@ fun ProfileScreen(user: User) {
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Data de Registro
         Text(
             text = "Membro desde",
             style = MaterialTheme.typography.titleMedium,
@@ -97,7 +95,6 @@ fun ProfileScreen(user: User) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Caronas Oferecidas
         Text(
             text = "Caronas Oferecidas",
             style = MaterialTheme.typography.titleMedium,

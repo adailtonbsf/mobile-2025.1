@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,18 +61,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.google.android.libraries.places.api.Places
 import kotlinx.coroutines.launch
 import me.daltonbsf.unirun.data.AuthRepository
+import me.daltonbsf.unirun.data.CaronaRepository
+import me.daltonbsf.unirun.data.ChatRepository
 import me.daltonbsf.unirun.data.UserPreferences
-//import me.daltonbsf.unirun.model.caronaChatList
-import me.daltonbsf.unirun.model.userChatList
 import me.daltonbsf.unirun.ui.components.BottomNavigationBar
 import me.daltonbsf.unirun.ui.components.TopBar
 import me.daltonbsf.unirun.ui.screens.AboutScreen
 import me.daltonbsf.unirun.ui.screens.AccountSettingsScreen
-//import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
-//import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
-//import me.daltonbsf.unirun.ui.screens.CaronaProfileScreen
+import me.daltonbsf.unirun.ui.screens.CaronaChatScreen
+import me.daltonbsf.unirun.ui.screens.CaronaDetailsScreen
+import me.daltonbsf.unirun.ui.screens.CaronaProfileScreen
 import me.daltonbsf.unirun.ui.screens.CaronaScreen
 import me.daltonbsf.unirun.ui.screens.ChatScreen
 import me.daltonbsf.unirun.ui.screens.ConfigScreen
@@ -84,6 +86,11 @@ import me.daltonbsf.unirun.ui.screens.UserChatScreen
 import me.daltonbsf.unirun.ui.theme.UniRunTheme
 import me.daltonbsf.unirun.viewmodel.AuthViewModel
 import me.daltonbsf.unirun.viewmodel.AuthViewModelFactory
+import me.daltonbsf.unirun.viewmodel.CaronaViewModel
+import me.daltonbsf.unirun.viewmodel.CaronaViewModelFactory
+import me.daltonbsf.unirun.viewmodel.ChatViewModel
+import me.daltonbsf.unirun.viewmodel.ChatViewModelFactory
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
@@ -93,6 +100,14 @@ class MainActivity : ComponentActivity() {
         AuthViewModelFactory(AuthRepository(), userPreferences)
     }
 
+    private val chatViewModel: ChatViewModel by viewModels {
+        ChatViewModelFactory(ChatRepository(), AuthRepository())
+    }
+
+    private val caronaViewModel: CaronaViewModel by viewModels {
+        CaronaViewModelFactory(CaronaRepository(), AuthRepository(), ChatRepository())
+    }
+
     @ExperimentalAnimationApi
     @SuppressLint("ObsoleteSdkInt", "ScheduleExactAlarm")
     @RequiresPermission(POST_NOTIFICATIONS)
@@ -100,9 +115,17 @@ class MainActivity : ComponentActivity() {
     @ExperimentalMaterial3Api
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        userPreferences = UserPreferences.getInstance(applicationContext) // Inicialize aqui
+        userPreferences = UserPreferences.getInstance(applicationContext)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(POST_NOTIFICATIONS), 1001)
+        }
+        try {
+            val apiKey = BuildConfig.MAPS_API_KEY
+            if (!Places.isInitialized()) {
+                Places.initialize(applicationContext, apiKey, Locale("pt"))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         setContent {
             val isDarkTheme by userPreferences.getPreference(UserPreferences.THEME_KEY, "true")
@@ -114,18 +137,24 @@ class MainActivity : ComponentActivity() {
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
             val currentUser by authViewModel.user.collectAsState()
+            LaunchedEffect(authViewModel.isUserLoggedIn()) {
+                if (authViewModel.isUserLoggedIn()) {
+                    chatViewModel.loadUserChats(applicationContext)
+                }
+            }
             UniRunTheme(darkTheme = isDarkTheme.toBoolean()) {
                 val withoutTopBottomBar = listOf(
-                    "peopleChat/{chatName}",
-                    "caronaChat/{chatName}",
+                    "peopleChat/{chatId}",
+                    "caronaChat/{chatId}",
                     "offerCarona",
                     "caronaDetails/{caronaId}",
-                    "caronaProfile/{chatName}",
+                    "caronaProfile/{caronaId}",
                     "login",
                     "registration"
                 )
                 ModalNavigationDrawer(
                     drawerState = drawerState,
+                    gesturesEnabled = !withoutTopBottomBar.contains(currentRoute),
                     drawerContent = {
                         Column(
                             modifier = Modifier
@@ -295,37 +324,41 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable("faq") { FAQScreen() }
-                                composable("chats/people") { UserChatScreen(navController) }
-                                //composable("chats/carona") { CaronaChatScreen(navController) } TODO: Implementar o CaronaChatRepository
-                                composable("carona") { CaronaScreen(navController) }
-                                composable("offerCarona") { OfferCaronaScreen(navController) }
+                                composable("chats/people") { UserChatScreen(navController, chatViewModel, authViewModel) }
+                                composable("chats/carona") { CaronaChatScreen(navController, authViewModel, chatViewModel) }
+                                composable("carona") { CaronaScreen(navController, caronaViewModel) }
+                                composable("offerCarona") { OfferCaronaScreen(navController, caronaViewModel) }
                                 composable("config") { ConfigScreen(navController) }
                                 composable("accountSettings") { AccountSettingsScreen(currentUser!!, navController) }
                                 composable("about") { AboutScreen() }
                                 composable("profile") { ProfileScreen(currentUser!!) }
-                                composable("peopleChat/{chatName}") { navBackStackEntry ->
-                                    val chatName = navBackStackEntry.arguments?.getString("chatName")
-                                    if (chatName != null) {
-                                        ChatScreen(userChatList.first(), navController)
+                                composable("peopleChat/{chatId}") { navBackStackEntry ->
+                                    val chatId = navBackStackEntry.arguments?.getString("chatId")
+                                    if (chatId != null) {
+                                        ChatScreen(chatId, navController, chatViewModel, authViewModel, caronaViewModel)
                                     }
                                 }
-                                // TODO: DESCOMENTAR ISSO QUANDO IMPLEMENTAR O CHAT DE CARONA
-                                /*composable("caronaChat/{chatName}") { navBackStackEntry ->
-                                    val chatName = navBackStackEntry.arguments?.getString("chatName")
-                                    if (chatName != null) {
-                                        ChatScreen(caronaChatList.first(), navController)
+                                composable("caronaChat/{chatId}") { navBackStackEntry ->
+                                    val chatId = navBackStackEntry.arguments?.getString("chatId")
+                                    if (chatId != null) {
+                                        ChatScreen(chatId, navController, chatViewModel, authViewModel, caronaViewModel)
                                     }
                                 }
-                                composable("caronaProfile/{chatName}") { navBackStackEntry ->
-                                    val chatName = navBackStackEntry.arguments?.getString("chatName")
-                                    if (chatName != null) {
-                                        CaronaProfileScreen(caronaChatList.first(), navController)
+                                composable("caronaProfile/{caronaId}") { navBackStackEntry ->
+                                    val caronaId = navBackStackEntry.arguments?.getString("caronaId")
+                                    if (caronaId != null) {
+                                        CaronaProfileScreen(
+                                            caronaId = caronaId,
+                                            navController = navController,
+                                            caronaViewModel = caronaViewModel,
+                                            authViewModel = authViewModel
+                                        )
                                     }
-                                }*/
+                                }
                                 composable("caronaDetails/{caronaId}") { navBackStackEntry ->
                                     val caronaId = navBackStackEntry.arguments?.getString("caronaId")
                                     if (caronaId != null) {
-                                        //CaronaDetailsScreen(caronaId, navController) TODO: Implementar o CaronaRepository
+                                        CaronaDetailsScreen(caronaId, navController, caronaViewModel, authViewModel)
                                     }
                                 }
                             }
